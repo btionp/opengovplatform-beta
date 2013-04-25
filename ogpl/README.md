@@ -1,4 +1,4 @@
-# OGPL-Beta Installation Guide #
+﻿# OGPL-Beta Installation Guide #
 
 
 
@@ -99,6 +99,14 @@ Community is an optional part of OGPL. You can disable community by disabling th
 If you want to use data conversion tool then copy the datatool folder from ogpl/webapps to your document root.
 
 For available options and parameters of the API please go through the readme.md file under datatool
+
+## Data Visualization API ##
+
+----------
+
+If you want to use Data Visualization tool then copy the visualize folder from ogpl/webapps to your document root.
+
+Enable opendataviz module to start with creating visualization.
 
 ## Creating Required users for Data Contribution ##
 

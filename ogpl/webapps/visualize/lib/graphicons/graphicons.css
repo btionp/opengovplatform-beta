@@ -1,0 +1,60 @@
+.graphicon-chart {
+	display:inline-block;
+	width:24px;
+	height:24px;
+	background: url("img/chart_icon.png");
+}
+.graphicon-dashboard {
+  display:inline-block;
+  width:24px;
+  height:24px;
+  background: url("img/glyphicons_331_dashboard.png");
+}
+.graphicon-grid {
+	display:inline-block;
+	width:24px;
+	height:24px;
+	background: url("img/grid_icon.png");
+}
+.graphicon-map {
+	display:inline-block;
+	width:24px;
+	height:24px;
+	background: url("img/map_icon.png");
+}
+.graphicon-map1 {
+  display:inline-block;
+  width:24px;
+  height:24px;
+  background: url("img/nicmap_icon.png");
+}
+.graphicon-circle-info {
+  display:inline-block;
+  width:26px;
+  height:26px;
+  background: url("img/glyphicons_195_circle_info.png") no-repeat center;
+}
+.graphicon-view {
+	display:inline-block;
+  width:31px;
+  height:17px;
+	background: url("img/glyphicons_051_eye_open.png");
+}
+.graphicon-slide-right {
+	display:inline-block;
+  width:14px;
+  height:22px;
+  background: url("img/glyphicons_223_chevron-right.png") no-repeat;
+}
+.graphicon-slide-left {
+  display:inline-block;
+  width:14px;
+  height:22px;
+  background: url("img/glyphicons_224_chevron-left.png") no-repeat;
+}
+.graphicon-dataset {
+	display:inline-block;
+  width:24px;
+  height:21px;
+  background: url("img/glyphicons_114_list.png") no-repeat;
+}

@@ -43,6 +43,26 @@ Dataset Operation Icons Images Starts ==========================================
     text-indent: -9999px;
     width: 15px;
 }
+.reply-review-link {
+    background: url("../images/icons/reply-review.png") no-repeat scroll center center transparent;
+    display: block;
+    float: left;
+    height: 15px;
+    margin: 3px 2px;
+    position: relative;
+    text-indent: -9999px;
+    width: 23px;
+}
+.note-link {
+    background: url("../images/icons/note.jpg") no-repeat scroll center center transparent;
+    display: block;
+    float: left;
+    height: 15px;
+    margin: 3px 2px;
+    position: relative;
+    text-indent: -9999px;
+    width: 15px;
+}
 .download-csv-link {
     background: url("../images/icons/download.png") no-repeat scroll center center transparent;
     display: block;
@@ -185,5 +205,15 @@ Dataset Operation Icons Images Starts ==========================================
 	position: relative;
 	text-indent: -9999px;
 	width: 15px;
+}
+.new-note {
+	background: url("../images/icons/newnote.png") no-repeat scroll top right transparent;
+  display: block;
+  float: left;
+  height: 16px;
+  margin: 4px 2px;
+  position: relative;
+  text-indent: -9999px;
+  width: 15px;
 }
 /* Dataset Operation Icons Images ENDS **************************************************  */

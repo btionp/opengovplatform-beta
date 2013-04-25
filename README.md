@@ -13,6 +13,7 @@ Release notes
 - Improved User Dashboard
 - Added Endorsement option for Received Suggestions/Ideas
 - Improved catalog page
+- Data Visualization Tool
 
 
 Data Portal India (http://data.gov.in) is powered by OGPL-Beta Codebase

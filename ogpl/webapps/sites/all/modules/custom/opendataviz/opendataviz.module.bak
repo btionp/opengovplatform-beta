@@ -1,0 +1,255 @@
+<?php 
+
+define("VISUALIZATION_CONTENT_TYPE", 'dataset');
+
+/**
+ * Implementation of hook_menu().
+ */
+function opendataviz_menu() {
+  $items['opendatavisualization/%/json'] = array(
+      'title' => 'Open Data Json',
+      'page callback' => 'opendataviz_json_output',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  $items['node/%node/createvisualization'] = array(
+      'title' => 'Data Visualization',
+      'page callback' => 'opendataviz_visualize',
+      'page arguments' => array(1),
+      'access callback' => 'opendataviz_allow_visualization',
+      'access arguments' => array(1),
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_LOCAL_TASK,
+  );
+  $items['approvevisualizationinstance/%'] = array(
+      'title' => 'Approve Visualization Instance',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('approve_visualization_instance', 1),
+      'access arguments' => array('approve visualization'),
+      'file' => 'visualize.pages.inc',
+      'weight' => 1,
+      'type' => MENU_CALLBACK
+  );
+  
+  $items['deletevisualizationinstance/%'] = array(
+      'title' => 'Approve Visualization Instance',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('delete_visualization_instance', 1),
+      'access arguments' => array('approve visualization'),
+      'file' => 'visualize.pages.inc',
+      'weight' => 1,
+      'type' => MENU_CALLBACK
+  );
+  
+  $items['visualizationinstances/%node'] = array(
+      'title' => 'Visualization Instance',
+      'page callback' => 'opendataviz_instance_list',
+      'page arguments' => array(1),
+      'access arguments' => array('access content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['visualizationnodedetail/%node/json'] = array(
+      'title' => 'Visualization Instance',
+      'page callback' => 'opendataviz_node_detail',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['disapprovevisualizationinstance/%'] = array(
+      'title' => 'Disapprove Visualization Instance',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('disapprove_visualization_instance', 1),
+      'access arguments' => array('approve visualization'),
+      'file' => 'visualize.pages.inc',
+      'weight' => 1,
+      'type' => MENU_CALLBACK
+  );
+  
+  $items['node/%node/visualizationinstance'] = array(
+      'title' => 'Visualization Instances',
+      'page callback' => 'opendataviz_visualization_instance',
+      'page arguments' => array(1),
+      'access callback' => 'opendataviz_allow_visualization',
+      'access arguments' => array(1),
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['dataset/visualize/%'] = array(
+      'title' => 'Open Data Visualization Engine',
+      'page callback' => 'opendataviz_visualize_output',
+      'page arguments' => array(2),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['visualizationview/%/json'] = array(
+      'title' => 'Open Data View Json',
+      'page callback' => 'opendataviz_view_json_output',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['visualizationviewsave/%/json'] = array(
+      'page callback' => 'opendataviz_instance_view_save',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,                                                                           
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['visualizationviewupdate/%/json'] = array(
+      'page callback' => 'opendataviz_instance_view_update',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['visualizationviewdelete/%/json'] = array(
+      'page callback' => 'opendataviz_instance_view_delete',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  $items['visualizationviewtitle/%/json'] = array(
+      'page callback' => 'opendataviz_instance_view_title',
+      'page arguments' => array(1),
+      'access arguments' => array('create dataset content'),
+      'access callback' => TRUE,
+      'file' => 'visualize.pages.inc',
+      'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+function opendataviz_allow_visualization($node) {
+  if(!node_access('update', $node)) {
+    return FALSE;
+  }
+  
+  if($node->field_ds_catlog_type[0][type] == 'catalog_type_data_apps') {
+    $visualize_status = FALSE;
+  } else {
+    $visualize_status = TRUE;
+  }
+  if ($node->type == VISUALIZATION_CONTENT_TYPE && $visualize_status) {
+    return TRUE;
+  }
+  
+  return FALSE;
+}
+
+
+function _get_visualization_instance_view_by_id($id) {
+  if($safe_id = check_plain($id)) {
+    $result = db_query("SELECT * FROM {opendataviz_instance_view} WHERE id = '%s'", $safe_id);
+    if($row = db_fetch_object($result)) {
+      $objdata = unserialize($row->data);
+      $row->data = $objdata;
+      $operation = opendataviz_view_check_operation($row->user_id);
+      $row->operation = $operation;
+    }
+
+    return $row;
+  }
+  return NULL;
+}
+
+function _get_visualization_instance_view_by_keyid($keyid) {
+  if($safe_key = check_plain($keyid)) {
+    $result = db_query("SELECT * FROM {opendataviz_instance_view} WHERE data_instance_id = '%s'", $safe_key);
+    $rows = array();
+    while($row = db_fetch_object($result)) {
+      $objdata = unserialize($row->data);
+      $row->data = $objdata;
+      $rows[$row->id] = $row;
+      $operation = opendataviz_view_check_operation($row->user_id);
+      $rows[$row->id]->operation = $operation;
+    }
+    return $rows;
+  }
+  return NULL;
+}
+
+function opendataviz_view_check_operation($user_id, $registerd = false) {
+  global $user;
+
+  $operation = array(
+      '_view'   => TRUE,
+      '_edit'   => FALSE,
+      '_create' => FALSE,
+      '_delete' => FALSE
+  );
+
+  if($registerd) {
+    if($user->uid != 0) {
+      $operation = array(
+          '_view'   => TRUE,
+          '_edit'   => FALSE,
+          '_create' => TRUE,
+          '_delete' => FALSE
+      );
+    } 
+  }
+
+  if($user->uid == 1) {
+    $operation = array(
+        '_view'   => TRUE,
+        '_edit'   => TRUE,
+        '_create' => TRUE,
+        '_delete' => TRUE
+    );
+  } else if($user_id == 0) {
+    $operation = $operation;
+  }
+  else if($user->uid == $user_id) {
+    $operation = array(
+        '_view'   => TRUE,
+        '_edit'   => TRUE,
+        '_create' => TRUE,
+        '_delete' => TRUE
+    );
+  }
+
+  return $operation;
+}
+
+function _get_visualization_instance_by_nid($nid, $is_active = 1) {
+  $result = db_query("SELECT * FROM {opendataviz_instance} WHERE node_id = %d AND active = %d ORDER BY id DESC", $nid, $is_active);
+  if($row = db_fetch_object($result)) {
+    return $row;
+  }
+  return NULL;
+}
+
+
+function opendataviz_get_visualization_link($nid) {
+  $link = '';
+  if($row = _get_visualization_instance_by_nid($nid)) {
+    $link = '<a href="'.$base_url.'/visualize.php?inst=' . $row->data_instance . '&nid='.$row->node_id.'" target="_blank">'.
+    '<img src="' .$base_url.'/'.drupal_get_path('theme', 'ogpl_css2').'/images/visualize.png"></a>';
+  } 
+  
+  return $link;
+}

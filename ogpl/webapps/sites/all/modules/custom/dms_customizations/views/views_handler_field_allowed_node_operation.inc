@@ -92,26 +92,12 @@ class views_handler_field_allowed_node_operation extends views_handler_field {
       '#options' => array(0 => t('Hide'), 1 => t('Show')),
       '#default_value' => $this->options['display_workflow_state'],
     );
-    $form['visualization_preview_link_text'] = array(
+    $form['manage_visualization_link_text'] = array(
         '#type' => 'textfield',
         '#description' => 'Leave blank to not show this link.',
-        '#title' => t('Preview Visualization'),
-        '#default_value' => $this->options['visualization_preview_link_text'],
+        '#title' => t('Manage Visualization'),
+        '#default_value' => $this->options['manage_visualization_link_text'],
     );
-    $form['visualization_approve_link_text'] = array(
-        '#type' => 'textfield',
-        '#description' => 'Leave blank to not show this link.',
-        '#title' => t('Approve Visualization'),
-        '#default_value' => $this->options['visualization_approve_link_text'],
-    );
-    
-    $form['visualization_disapprove_link_text'] = array(
-        '#type' => 'textfield',
-        '#description' => 'Leave blank to not show this link.',
-        '#title' => t('Disapprove Visualization'),
-        '#default_value' => $this->options['visualization_disapprove_link_text'],
-    );
-    
   }
 
   function query() {
@@ -174,6 +160,7 @@ class views_handler_field_allowed_node_operation extends views_handler_field {
       if(!in_array('Contributor', $author->roles)) {
         $actions['delete_request'] = $published_state;
       }
+      $actions['delete_request'] = $published_state;
     }
 
     return $actions;
@@ -192,9 +179,7 @@ class views_handler_field_allowed_node_operation extends views_handler_field {
     $nid = $values->{$this->aliases['nid']};
     $node = node_load($nid);
     module_load_include('inc', 'workflow_customizations', 'workflow_customizations.validation');
-    //$validated = workflow_customizations_validate_node($node);
-    
-    $validated = 1;
+    $validated = workflow_customizations_validate_node($node);
     
     $actions = $this->possible_workflow_transitions($node);
 	  $wid = workflow_get_workflow_for_type($node->type);
@@ -225,7 +210,7 @@ class views_handler_field_allowed_node_operation extends views_handler_field {
       $links.= $actions['current_state_name'] . '<br>';
 
       if (!$validated) {
-        // $links .= '<em class="required">Dataset does not meet requirements</em><br>';
+        //$links .= '<em class="required">Dataset does not meet requirements</em><br>';
       }
     }
 
@@ -280,7 +265,7 @@ class views_handler_field_allowed_node_operation extends views_handler_field {
       $links .= l($text, url("node/$nid/update_request", array('query' => 'destination=', 'absolute' => TRUE)), $attributes);
     }
 
-    if (isset($actions['delete_request']) && !empty($this->options['delete_request_link_text'])  && user_access('create dataset content')) {
+    if (isset($actions['delete_request']) && !empty($this->options['delete_request_link_text'])  && workflow_node_revisions_access_check($node)) {
       $attributes = array('attributes' => array('class' => 'delete-request-link', 'title' => 'Delete this published dataset'));
       $text = $this->options['delete_request_link_text'];
       $links .= l($text, url("node/$nid/delete_request", array('query' => 'destination=', 'absolute' => TRUE)), $attributes);
@@ -303,36 +288,11 @@ class views_handler_field_allowed_node_operation extends views_handler_field {
     } else {
       $visualize_status = TRUE;
     }
-    
-    if ($node->field_ds_is_visual[0]['value'] == 1) {
-      $visualization_approve_status = TRUE;
-    } 
-    else {
-      $visualization_approve_status = FALSE;
+    if ($visualize_status && $this->custom_node_access('view',$wid,$node) && !empty($this->options['manage_visualization_link_text'])) {
+      $attributes = array('attributes' => array('class' => 'Approve-visualization', 'title' => 'Manage Visualization'));
+      $text = $this->options['manage_visualization_link_text'];
+      $links .= l($text, 'node/'.$node->nid.'/visualizationinstance', $attributes);
     }
-    
-    if ($visualize_status && $this->custom_node_access('view',$wid,$node) && !empty($this->options['visualization_preview_link_text'])) {
-      $attributes = array('attributes' => array('class' => 'preview-visualization', 'title' => 'Preview Visualization', 'target' => '_blank'));
-      $text = $this->options['visualization_preview_link_text'];
-      $links .= l($text, url("visualize", array('query' => array('url' => $visualize_link, 'backend' => variable_get('webservice_to_use', 'dataproxy')), 'absolute' => TRUE)), $attributes);
-    }
-    
-    
-    if (!$visualization_approve_status) {
-      if ($visualize_status && $this->custom_node_access('view',$wid,$node) && !empty($this->options['visualization_approve_link_text'])) {
-        $attributes = array('attributes' => array('class' => 'Approve-visualization', 'title' => 'Approve Visualization'));
-        $text = $this->options['visualization_approve_link_text'];
-        $links .= l($text, url("node/$nid/approvevisualization", array('query' =>  'destination=<front>', 'absolute' => TRUE)), $attributes);
-      }
-    }
-    else {
-      if ($visualize_status && $this->custom_node_access('view',$wid,$node) && !empty($this->options['visualization_disapprove_link_text'])) {
-        $attributes = array('attributes' => array('class' => 'Disapprove-visualization', 'title' => 'Disapprove Visualization'));
-        $text = $this->options['visualization_disapprove_link_text'];
-        $links .= l($text, url("node/$nid/disapprovevisualization", array('query' =>  'destination=<front>', 'absolute' => TRUE)), $attributes);
-      }
-    }
-    
     return $links;
   }
 }

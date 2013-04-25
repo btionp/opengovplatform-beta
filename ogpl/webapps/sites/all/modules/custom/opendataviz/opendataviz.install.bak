@@ -1,0 +1,108 @@
+<?php
+
+function opendataviz_install()
+{
+  drupal_install_schema('opendataviz');
+  drupal_set_message(st('Installed Open Data Visualization module'));
+}
+
+function opendataviz_uninstall()
+{
+  drupal_uninstall_schema('opendataviz');
+  drupal_set_message(st('Uninstalled Open Data Visualization module'));
+}
+
+function opendataviz_schema()
+{
+    $schema['opendataviz_instance'] = array(
+        'description' => 'Stores Open Data Instances',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'size' => 'big',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'user_id' => array(
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE
+            ),
+            'node_id' => array(
+                'type' => 'int',
+                'not null' => TRUE,
+                'unsigned' => TRUE
+            ),
+            'data_instance' => array(
+                'type' => 'varchar', 
+                'length' => 255, 
+                'not null' => TRUE,
+            ),
+            'title' => array(
+                'type' => 'text',
+                'not null' => TRUE,
+            ),
+            'description' => array(
+                'type' => 'text',
+                'not null' => TRUE,
+            ),
+            'data' => array(
+                'type' => 'text',
+                'not null' => TRUE,
+            ),
+            'active' => array(
+                'type' => 'int',
+                'not null' => TRUE,
+                'unsigned' => TRUE
+            ),
+            'date_created' => array(
+                'description' => 'The Unix timestamp at which the read occurred.', 
+                'type' => 'int', 
+                'not null' => TRUE, 
+                'default' => 0,
+            ),
+        ),
+        'primary key' => array('id'),        
+    );
+    
+    $schema['opendataviz_instance_view'] = array(
+        'description' => 'Stores Open Data Instance View',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'size' => 'big',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ),
+            'data_instance_id' => array(
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE
+            ),
+            'user_id' => array(
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE
+            ),
+            'data' => array(
+                'type' => 'text',
+                'not null' => TRUE,
+            ),
+            'date_created' => array(
+                'description' => 'The Unix timestamp at which the read occurred.', 
+                'type' => 'int', 
+                'not null' => TRUE, 
+                'default' => 0
+            ),
+            'date_updated' => array(
+                'description' => 'The Unix timestamp at which the read occurred.', 
+                'type' => 'int', 
+                'not null' => TRUE, 
+                'default' => 0
+            ),
+        ),
+        'primary key' => array('id'),
+    ) ;
+    
+    return $schema;
+}

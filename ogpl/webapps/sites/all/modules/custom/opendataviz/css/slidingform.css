@@ -1,0 +1,292 @@
+*{
+    margin:0px;
+    padding:0px;
+}
+body hr {
+	display:block !important;
+}
+#content-visualize{
+    margin:15px auto;
+    text-align:center;
+    width:895px;
+    position:relative;
+    height:100%;
+}
+.container-main{
+	margin: 0 100px 0 0;
+}
+#wrapper{
+    -moz-box-shadow:0px 0px 3px #aaa;
+    -webkit-box-shadow:0px 0px 3px #aaa;
+    box-shadow:0px 0px 3px #aaa;
+    -moz-border-radius:10px;
+    -webkit-border-radius:10px;
+    border-radius:10px;
+    border:2px solid #fff;
+    background-color:#F0F0F0;
+    width:1000px;
+    overflow:hidden;
+}
+#steps{
+    width:1000px;
+  /*height:320px;*/
+    overflow:hidden;
+}
+.step{
+    float:left;
+    width:1000px;
+  /*height:320px;*/
+}
+#navigation{
+    height:45px;
+    background-color:#e9e9e9;
+    border-top:1px solid #fff;
+    border-bottom:1px solid #FFFFFF;
+    /*
+    -moz-border-radius:0px 0px 10px 10px;
+    -webkit-border-bottom-left-radius:10px;
+    -webkit-border-bottom-right-radius:10px;
+    border-bottom-left-radius:10px;
+    border-bottom-right-radius:10px;
+    */
+}
+#navigation ul{
+  list-style:none;
+  float:left;
+  margin-left:14%;
+}
+#navigation ul li{
+  float:left;
+  position:absolute;
+  margin:0px 2px;
+}
+#navigation ul li a{
+    display: block;
+    color: #000;
+    font-weight: bold;
+    height: 40px;
+    line-height: 35px;
+    outline: medium none;
+    padding: 5px 30px 0 33px;
+    text-decoration: none;
+}
+#navigation ul li a:hover,
+#navigation ul li.selected a{
+    color:#000;
+    text-shadow:1px 1px 1px #fff;
+}
+span.checked{
+    background:transparent url(../images/checked.png) no-repeat top left;
+    height: 30px;
+    left: -3px;
+    position: absolute;
+    top: 0;
+    width: 45px;
+}
+span.error{
+    background: url("../images/error2.png") no-repeat scroll left top transparent;
+    height: 29px;
+    left: -1px;
+    position: absolute;
+    top: 0;
+    width: 45px;
+}
+.step1 span.error {
+  background:transparent url(../images/error.png) no-repeat top left;
+  height: 36px;
+  left: 21px;
+}
+.step1 span.checked {
+  background:transparent url(../images/checkedv2.png) no-repeat top left;
+  height: 36px;
+  left: 21px;
+}
+#steps form fieldset{
+    border:none;
+    padding-bottom:20px;
+}
+#steps form legend{
+    text-align:left;
+    background: #FFFEFF url(../images/legand-bg.png) left top repeat-x;
+    color:#232846;
+    font-size:24px;
+    text-shadow:1px 1px 1px #fff;
+    font-weight:bold;
+    float:left;
+    width:auto;
+    padding:5px 20px 5px 10px;
+    margin:10px 10px 0 0px;
+    border: solid #FFF;
+    border-bottom: none;
+    border-radius: 10px 10px 0px 0px;
+    text-align:center;
+}
+#steps form p{
+    float:left;
+    clear:both;
+    margin:5px 0px;
+    width:400px;
+    padding:10px;
+    margin-left:30%;
+    text-align: left;
+}
+#steps form p label{
+    width:160px;
+    float:left;
+    text-align:right;
+    margin-right:15px;
+    line-height:26px;
+    color:#666;
+    text-shadow:1px 1px 1px #fff;
+    font-weight:bold;
+}
+#steps form input:not([type=radio]),
+#steps form textarea,
+#steps form select{
+    background: #ffffff;
+    border: 1px solid #ddd;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    outline: none;
+    padding: 5px;
+    float:left;
+}
+#steps form input:focus{
+    -moz-box-shadow:0px 0px 3px #aaa;
+    -webkit-box-shadow:0px 0px 3px #aaa;
+    box-shadow:0px 0px 3px #aaa;
+    background-color:#FFFEEF;
+}
+#steps form p.submit{
+    background:none;
+    border:none;
+    -moz-box-shadow:none;
+    -webkit-box-shadow:none;
+    box-shadow:none;
+}
+#steps form button#registerButton {
+  border:solid #FFD511;
+  outline:none;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    color: #52304B;
+    display: block;
+    cursor:pointer;
+    margin: 0px auto;
+    clear:both;
+    padding: 7px 25px;
+    text-shadow: 0 1px 1px #777;
+    font-weight:bold;
+    font-family:"Century Gothic", Helvetica, sans-serif;
+    font-size:22px;
+    -moz-box-shadow:0px 0px 3px #aaa;
+    -webkit-box-shadow:0px 0px 3px #aaa;
+    box-shadow:0px 0px 3px #aaa;
+    background:#FED614;
+}
+#steps form button#registerButton:hover {
+    border:solid #d8d8d8;
+    background:#d8d8d8;
+    color:#52304B;
+    text-shadow:1px 1px 1px #fff;
+}
+#process-control, #preview-control{
+  width: 1000px;
+  clear: both;
+}
+#csvarray, #preview-data, #dataset-details-wrapper, .confirm-wrapper, #data-source-wrapper{
+  width: 100%;
+  overflow:auto;
+  display:block;
+  height: 400px;
+}
+#data-source-wrapper {
+	overflow: hidden;
+}
+#dataColumn {
+  width: 100%;
+  overflow:auto;
+  display:block;
+  height: 300px;
+}
+#processdataColumn {
+  width: 100%;
+  overflow:auto;
+  display:block;
+  height: 100px;
+}
+
+/*   Step styles - */
+#navigation ul li{
+  background: url("../images/greytabbg.png") right center no-repeat;
+}
+#navigation ul li.parsed{
+  background: url("../images/complete.png") right center no-repeat;
+}
+#navigation ul li.selected #csv-source {
+  background: url("../images/step1.png") right center no-repeat;
+}
+#navigation ul li.selected #proces-csv {
+ background: url("../images/step2.png") right center no-repeat;
+}
+#navigation ul li.selected #preview-csv {
+ background: url("../images/step3.png") right center no-repeat;
+}
+#navigation ul li.selected #account-details {
+  background: url("../images/step4.png") right center no-repeat;
+}
+#navigation ul li.selected #confirm-process {
+  background: url("../images/step5.png") right center no-repeat;
+}
+#navigation ul li.parsed a, #navigation ul li.selected a{
+	color: #FFF;
+}
+#data-source-wrapper {
+  background: #dbe1ff;
+  border: solid #FFF;
+}
+#csvarray{
+  background: #ffeff1;
+  border: solid #FFF;
+}
+.process-csv-control {
+  background: #fff4f5;
+  border: solid #FFF;
+  height: 400px;
+}
+#preview-data {
+  background: #dfffe2;
+  border: solid #FFF;
+}
+#dataset-details-wrapper {
+  background: #ffe8fd;
+  border: solid #FFF;
+}
+.confirm-wrapper {
+  background: #ffffc8;
+  border: solid #FFF;
+}
+#navigation ul li.step1 {
+  z-index: 50;
+}
+#navigation ul li.step2 {
+  z-index: 40;
+  margin-left: 169px;
+}
+#navigation ul li.step3 {
+  z-index: 30;
+  margin-left: 289px;
+}
+#navigation ul li.step4 {
+  z-index: 20;
+  margin-left: 415px;
+}
+#navigation ul li.step5 {
+  z-index: 10;
+  margin-left: 553px;
+}
+#steps select.header-meta {
+	display: none;
+}

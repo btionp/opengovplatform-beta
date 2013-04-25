@@ -1,0 +1,64 @@
+.data_viz_pad_lr_10 {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+.btn.data_viz_sidebar_control.sidebar_view {
+	background: #B0C866;
+}
+
+.btn.data_viz_sidebar_control.sidebar_fields {
+	background: #B4B152;
+}
+
+.btn.data_viz_sidebar_control.sidebar_filter {
+  background: #8FA3C8;
+}
+
+.btn.data_viz_sidebar_control.sidebar_groups {
+  background: #B0C866;
+}
+
+.btn.data_viz_sidebar_control.sidebar_visualize_chart {
+  background: #AE8DA8;
+  z-index: 0;
+}
+
+.btn.data_viz_sidebar_control.sidebar_map {
+  background: #AA7390;
+}
+
+.btn.data_viz_sidebar_control.sidebar_custom_query {
+  background: #B3AE52;
+}
+
+.btn.data_viz_sidebar_control.sidebar_about {
+  background: #B0C866;
+}
+
+.data_horz_space {
+	margin: 0 10px; 
+}
+
+#data_viz_sidebar_control {
+	margin: 1px 0;
+}
+.well {
+	border-radius: 0;
+}
+#instance-dropdown-content {
+	margin-top: 17px;
+}
+.google-visualization-charteditor-dialog {
+	
+}
+#data_viz_grid {
+    overflow: hidden;
+}
+#info-desc-toggle {
+	cursor: pointer;
+	padding: 0 5px;
+}
+.data_viz_sidebar_content .label {
+	white-space: normal;
+	padding: 1px 4px;
+}
