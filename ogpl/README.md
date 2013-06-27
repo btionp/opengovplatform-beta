@@ -33,7 +33,7 @@ For information on Drupal installation, see the INSTALL.txt file in the OGPL/Web
 
 - To access help document please move the "helps" and "WebHelp" folder from ogpl/webapps to your server document root
 - For Text resize, in the advance setting of the Text resize module (admin/settings/textsize), update the XHTML element ID/class your theme have.
-- Check the Apache SOLR setting (admin/settings/apachesolr/settings) and update the following server settings. 
+- Check the Apache SOLR setting (admin/settings/apachesolr/settings) and update the following server settings. Visit [this link](http://wiki.apache.org/solr/#Installation_and_Configuration "Installation and Configuration of Apache Solr") to know more about about Solr Installation and Configuration.
 	- Solr host name (Host name of your Solr server, e.g. localhost or example.com.)
 	- Solr port (Port on which the Solr server listens. The Jetty example server is 8983, while Tomcat is 8080 by default.)
 	- Solr path (Path that identifies the Solr request handler to be used.)
