@@ -98,10 +98,11 @@ function import_ogpl($filename) {
   }
 
   // Drop all existing tables.
+  /*
   foreach (ogpl_list_tables() as $table) {
     db_query("DROP TABLE %s", $table);
   }
-
+  */
   // Load data from dump file.
   $success = TRUE;
   $query = '';
@@ -122,13 +123,11 @@ function import_ogpl($filename) {
     $query .= $data;
     $len = strlen($data);
     if ($data[$len - 1] == "\n") {
-      if ($data[$len - 2] == ';') {
-        // Reached the end of a query, now execute it.
-        if (!_db_query($query, FALSE)) {
-          $success = FALSE;
-        }
-        $query = '';
+      // Reached the end of a query, now execute it.
+      if (!_db_query($query, FALSE)) {
+        $success = FALSE;
       }
+      $query = '';
       $new_line = TRUE;
     }
     else {
