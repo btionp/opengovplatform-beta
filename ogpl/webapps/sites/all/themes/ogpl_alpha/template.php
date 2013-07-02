@@ -27,9 +27,9 @@ function phptemplate_body_class($sidebar_left, $sidebar_right) {
 /**
  * Override or insert PHPTemplate variables into the templates.
  */
-function ogpl_css2_preprocess_page(&$vars) {
+function ogpl_alpha_preprocess_page(&$vars) {
   $vars['tabs2'] = menu_secondary_local_tasks();
-  ogpl_css2_removetab('Workflow', $vars);
+  ogpl_alpha_removetab('Workflow', $vars);
 
   
   // Hook into color.module
@@ -38,7 +38,7 @@ function ogpl_css2_preprocess_page(&$vars) {
   //}
 }
 
-function ogpl_css2_removetab($label, &$vars) {
+function ogpl_alpha_removetab($label, &$vars) {
   $tabs = explode("\n", $vars['tabs']);
   $vars['tabs'] = '';
   
@@ -68,11 +68,11 @@ function ogpl_css2_removetab($label, &$vars) {
 function phptemplate_breadcrumb($breadcrumb) {
   if (!empty($breadcrumb)) {
 	if(strip_tags($breadcrumb['1']) == 'Administer' && $user->uid != 1 && !in_array('Administrator', $user->roles)) unset($breadcrumb['1']);
-	if(in_array(drupal_get_path_alias($_GET['q']),array("admin/build/block/list","admin/build/block","admin/build/block/list/ogpl_css2"))) {
+	if(in_array(drupal_get_path_alias($_GET['q']),array("admin/build/block/list","admin/build/block","admin/build/block/list/ogpl_alpha"))) {
 	unset($breadcrumb['1']);
 	unset($breadcrumb['3']);
 	unset($breadcrumb['4']);
-	$breadcrumb['2']=l('OGPL With CSS2 Theme Blocks','admin/build/block/list/ogpl_css2');}
+	$breadcrumb['2']=l('OGPL With CSS2 Theme Blocks','admin/build/block/list/ogpl_alpha');}
 	return '<div class="breadcrumb">'. implode(' ', $breadcrumb) .'</div>';
   }
 }
@@ -179,7 +179,7 @@ function skodaxanthifc_print_only_terms_of($node, $vid) {
     return $output;
 }
 
-function ogpl_css2_preprocess_search_theme_form(&$vars,$hook)
+function ogpl_alpha_preprocess_search_theme_form(&$vars,$hook)
 {
  $vars['form']['search_theme_form']['#title'] = t('Search');
 
@@ -201,12 +201,12 @@ $vars['search']['search_theme_form'] = drupal_render($vars['form']['search_theme
   $vars['search']['submit'] = drupal_render($vars['form']['submit']);
 
 }
-function ogpl_css2_search_form($form)
+function ogpl_alpha_search_form($form)
 {
   print_r($form);
 
 }
-function ogpl_css2_menu_item_link($link) {
+function ogpl_alpha_menu_item_link($link) {
  if ($link['title'] == 'Add To Favorites'){
     return '<a href="javascript:void(0);" onclick="add_to_favourites();">'.$link['title'].'</a>';
 }
@@ -217,7 +217,7 @@ if ($link['title'] == 'Communities' || $link['title'] == 'Community'){
 
 }
 
-function ogpl_css2_apachesolr_facet_link($facet_text, $path, $options = array(), $count, $active = FALSE, $num_found = NULL) {
+function ogpl_alpha_apachesolr_facet_link($facet_text, $path, $options = array(), $count, $active = FALSE, $num_found = NULL) {
  
   if ($facet_text == 'text/csv') return apachesolr_l("CSV ($count)",  $path, $options); 
   
@@ -250,7 +250,7 @@ function ogpl_css2_apachesolr_facet_link($facet_text, $path, $options = array(),
   return apachesolr_l($facet_text ." ($count)",  $path, $options);
 }
 
-function ogpl_css2_apachesolr_unclick_link($facet_text, $path, $options = array()) {
+function ogpl_alpha_apachesolr_unclick_link($facet_text, $path, $options = array()) {
   //apachesolr_js();
   
   // Determine if we are dealing with ratings output
@@ -301,7 +301,7 @@ function ogpl_css2_apachesolr_unclick_link($facet_text, $path, $options = array(
 
 
 
-function ogpl_css2_form_element($element, $value) {
+function ogpl_alpha_form_element($element, $value) {
   // This is also used in the installer, pre-database setup.
   $t = get_t();
 
@@ -378,7 +378,7 @@ function phptemplate_username($object) {
  
   return $output;
 }
-function ogpl_css2_grid_block($element, $name) {
+function ogpl_alpha_grid_block($element, $name) {
   $output = '';
   if ($element) {
     $output .= '<div id="' . $name . '" class="' . $name . ' block">' . "\n";
@@ -395,7 +395,7 @@ function ogpl_css2_grid_block($element, $name) {
  * Row & block theme functions
  * Adds divs to elements in page.tpl.php
  */
-function ogpl_css2_grid_row($element, $name, $class='', $width='', $extra='') {
+function ogpl_alpha_grid_row($element, $name, $class='', $width='', $extra='') {
   $output = '';
   $extra = ($extra) ? ' ' . $extra : '';
   if ($element) {
@@ -418,7 +418,7 @@ function ogpl_css2_grid_row($element, $name, $class='', $width='', $extra='') {
  * Custom theme functions
  */
 
-function ogpl_css2_theme() {
+function ogpl_alpha_theme() {
   return array(
     'grid_row' => array(
       'arguments' => array('element' => NULL, 'name' => NULL, 'class' => NULL, 'width' => NULL),
@@ -428,7 +428,7 @@ function ogpl_css2_theme() {
     ),
   );
 }
-function ogpl_css2_filefield_icon($file) {
+function ogpl_alpha_filefield_icon($file) {
     global $base_url;
     if (is_object($file)) {
         $file = (array) $file;
