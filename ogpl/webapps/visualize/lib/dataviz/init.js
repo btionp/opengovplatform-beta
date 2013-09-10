@@ -202,8 +202,8 @@ var DataViz = {
 		var data = response.getDataTable();
 		DataViz._cache_data = data;
 		//DataViz._local_data.chart = data;
-		
-		DataViz._add_fields(data.z);
+		console.log(data);
+		DataViz._add_fields(data.H);
 		
 		DataViz._initialize_grid(data, false);
 		
@@ -544,13 +544,13 @@ var DataViz = {
 		   });
 		   
 		if (typeof(geo_index['lat']) != 'undefined') {
-			$.each (data.D, function(key, value) { 
+			$.each (data.J, function(key, value) { 
 			var myLatlng = new google.maps.LatLng(value.c[geo_index['lat']].v,value.c[geo_index['lon']].v);
 			var information = '';
 			$.each (value, function(i, rowdata) { 
 				$.each (rowdata, function(j, rowvalue) { 
 					if (j !== geo_index['lat'] && j !== geo_index['lon']) {
-					information += data.z[j].label + ": " + rowvalue.v + " </br>";
+					information += data.H[j].label + ": " + rowvalue.v + " </br>";
 					}
 				});
 			});
@@ -571,13 +571,13 @@ var DataViz = {
 	_generate_arcgis_map: function(data, auto) {
 		var geo_index = DataViz._get_lat_lon_index(data, auto);
 		if (typeof(geo_index['lat']) !== 'undefined') {
-			$.each (data.D, function(key, value) { 
+			$.each (data.J, function(key, value) { 
 			var myLatlng = new google.maps.LatLng(value.c[geo_index['lat']].v,value.c[geo_index['lon']].v);
 			var information = '';
 			$.each (value, function(i, rowdata) { 
 				$.each (rowdata, function(j, rowvalue) { 
 					if (j !== geo_index['lat'] && j !== geo_index['lon']) {
-					information += data.z[j].label + ": " + rowvalue.v + " </br>";
+					information += data.H[j].label + ": " + rowvalue.v + " </br>";
 					}
 				});
 			});
@@ -601,7 +601,7 @@ var DataViz = {
 		var lon_val = ['lon','longitude'];
 		var geo_index = {};
 		if (auto) {
-		$.each(data.z, function(key, value) { 
+		$.each(data.H, function(key, value) { 
 			  if ($.inArray(value.label.toLowerCase(), lat_val) !== -1) {
 				  geo_index['lat'] = key;
 			  }
@@ -781,7 +781,7 @@ var DataViz = {
 			
 			$(this).html("");
 			$(this).append(first_option);
-			var columns = DataViz._cache_data.z;
+			var columns = DataViz._cache_data.H;
 			
 			for(key in columns) {
 				if (index_val && key == index_val && id != 'undefined' && $(this).attr('id') == id)
@@ -796,7 +796,7 @@ var DataViz = {
 			
 			$(this).html("");
 			$(this).append(first_option);
-			var columns = DataViz.data.z;
+			var columns = DataViz.data.H;
 			
 			for(key in columns) {
 				$(this).append('<option value="'+key+'">'+columns[key].label+'</option>');
@@ -829,7 +829,7 @@ var DataViz = {
 	},
 	_get_data_column: function(columnKey) {
 		var column_data = [];
-		$.each(DataViz._cache_data.D, function(key, value) {
+		$.each(DataViz._cache_data.J, function(key, value) {
 			var column_data_row = [];
 			column_data_row.push(value.c[columnKey].v);
 			column_data.push(column_data_row);
