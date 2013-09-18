@@ -15,20 +15,61 @@ function web_download_count_menu()
 
 function access_point_download_count()
 {
-  $url=$_GET['url'];
-  $nid=$_GET['nid'];
-  $result=db_query('select * from web_download_count where web_download_count.nid='.$nid);
-  $row=db_fetch_object($result);
 
-  if($row)
-  {
-    $result= db_query("update {web_download_count} set download_count=download_count+1  where web_download_count.nid=$nid");
+  global $base_url;
+  $url = $_GET['url'];
+  if(check_url($url)) {
+    $referer = parse_url($url, PHP_URL_HOST);
+    $base = parse_url($base_url, PHP_URL_HOST);
+    $sql = "SELECT COUNT(ds.field_dsat_access_point_value) AS count
+        FROM content_type_dataset ds
+        LEFT JOIN node n ON ds.nid=n.nid
+        LEFT JOIN workflow_node wf ON ds.nid=wf.nid
+        WHERE ds.field_dsat_access_point_value LIKE '%" . $url. "%' 
+        AND n.status=1";
+    $result_url=db_query($sql);
+    $row_url=db_fetch_object($result_url);
+    if($referer == $base) {
+      $nid=$_GET['nid'];
+      $result=db_query('select * from web_download_count where web_download_count.nid='.$nid);
+      $row=db_fetch_object($result);
+      
+      if($row)
+      {
+        $result= db_query("update {web_download_count} set download_count=download_count+1  where web_download_count.nid=$nid");
+      }
+      else
+      { $result=db_query("insert into {web_download_count} (nid,access_point_url,download_count) values ($nid,'$url',1)" );
+      }
+      $path=url($url);
+      drupal_goto($path);
+    }
+    else if($row_url->count) {
+      $nid=$_GET['nid'];
+      $result=db_query('select * from web_download_count where web_download_count.nid='.$nid);
+      $row=db_fetch_object($result);
+    
+      if($row)
+      {
+        $result= db_query("update {web_download_count} set download_count=download_count+1  where web_download_count.nid=$nid");
+      }
+      else
+      { $result=db_query("insert into {web_download_count} (nid,access_point_url,download_count) values ($nid,'$url',1)" );
+      }
+      $path=url($url);
+      drupal_goto($path);
+    }
+    else {
+      drupal_not_found();
+      exit();
+    }
   }
-  else
-  { $result=db_query("insert into {web_download_count} (nid,access_point_url,download_count) values ($nid,'$url',1)" );
+  else {
+    drupal_set_message("Invalid URL");
+    drupal_not_found();
+    exit();
   }
-  $path=url($url);
-  drupal_goto($path);
+  
 }
 
 function get_web_download_count_html($nid) {
@@ -42,9 +83,19 @@ function get_web_download_count_html($nid) {
     } else {
       $download_count = '<span class="download-stat"> Downloaded '.$download_count.' times </span>';
     }
+  }   
+  return $download_count;
+}
+
+function get_web_download_count_text($download_count) {
+  if($download_count) {
+    if ($download_count == 1) {
+      $download_count = '<span class="download-stat">Downloaded '.$download_count.' time </span>';
+    } else {
+      $download_count = '<span class="download-stat"> Downloaded '.$download_count.' times </span>';
+    }
   } else {
-    $download_count = '<span class="download-stat"> Never Downloaded </span>';
+    $download_count = '';
   }
-  
   return $download_count;
 }

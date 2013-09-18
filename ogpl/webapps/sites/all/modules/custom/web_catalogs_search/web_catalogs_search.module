@@ -8,7 +8,7 @@ function get_average_ratings($nid) {
   $usab=votingapi_select_results(array('content_id' => $nid, 'tag' =>'voteusability', 'function' => 'average'));
   $oldrange=(25-0);
   $newrange=(40-20);
-
+  
   $a=(int)$acc[0]['value'];
   $q=(int)$qual[0]['value'];
   $u=(int)$usab[0]['value'];
@@ -314,12 +314,14 @@ function get_filter_value($value)
 
 function remove_keys()
 {
-  $keys=$_GET['keys'];
-  $keys='keys='.$keys;
-  $keys=str_replace(' ','+',$keys);
-  $url=$_SERVER['REQUEST_URI'];
-  $url=str_replace($keys,'keys=',$url);
-  $url=str_replace('&','&amp;',$url);
+  $keys   = urlencode($_GET['keys']);
+  $keys   = 'keys='.$keys;
+  $keys   = str_replace('+','%20',$keys);
+  $keys   = str_replace('_','%5F',$keys);
+  $keys   = str_replace('.','%2E',$keys);
+  $keys   = str_replace('-','%2D',$keys);
+  $url    = $_SERVER['REQUEST_URI'];
+  $url    = str_replace($keys,'',$url);
   return $url;
 }
 
@@ -383,75 +385,64 @@ function web_catalogs_search_block($op = 'list', $delta = 0, $edit = array())
 {
   switch ($op) {
     case 'list':
-       
-      $blocks[0] = array(
-      'info' => t('Search: Filter By Ministry/Department'),
-      );
-      $blocks[1] = array(
-          'info' => t('Search: Filter By Group Name'),
-      );
       /*
-       $blocks[2] = array(
-           'info' => t('Search: Filter By Department Name'),
-       );
+      $blocks[0]['info'] = t('Filter Ministry/Department');
+      $blocks[1]['info'] = t('Filter Group Name');
+      $blocks[2]['info'] = t('Filter State/Ministry/Department');
+      $blocks[3]['info'] = t('Filter Resource Format');
+      $blocks[4]['info'] = t('Sort By');
+      $blocks[5]['info'] = t('Current Search');
+      $blocks[6]['info'] = t('Form'); 
+      $blocks[7]['info'] = t('Filter State/Ministry/Department');
       */
-      $blocks[3] = array(
-          'info' => t('Search: Filter By Resource Format'),
-      );
-      $blocks[4] = array(
-          'info' => t('Search: Sort By'),
-      );
-      $blocks[5] = array(
-          'info' => t('Search: Current Search'),
-      );
-       
-      /* $blocks[6] = array(
-       'info' => t('Search: Form'),
-      ); */
-
+      $blocks[10]['info'] = t('WCS Ministry/Department');
+      $blocks[11]['info'] = t('WCS State/Department');
+      $blocks[12]['info'] = t('WCS Resource Format');
+      $blocks[13]['info'] = t('WCS Group Name');
+      $blocks[14]['info'] = t('WCS Sort By');
+      $blocks[15]['info'] = t('WCS Current Search');
       return $blocks;
-
     case 'view':
       switch ($delta) {
-
-        case 0:
-          $blocks['subject'] = "Filter By Ministry/Department";
-          $blocks['content'] = agency_name_filters();
+        case '10':
+          $block['subject'] = "Filter By Ministry/Department";
+          $block['content'] = agency_name_filters();
           break;
-        case 1:
-          $blocks['subject'] = "Filter By Group";
-          $blocks['content'] = group_name_filters();
+        case '11':
+          $block['subject'] = "Filter By State/Department";
+          $block['content'] = state_agency_filters();
           break;
-          /*
-           case 2:
-          $blocks['subject'] = "Filter By Department Name";
-          $blocks['content'] = sub_agency_name_filters();
+        case '12':
+          $block['subject'] = "Filter By Resource Format";
+          $block['content'] = file_format_filters();
           break;
-          */
-        case 3:
-          $blocks['subject'] = "Filter By Resource Format";
-          $blocks['content'] = file_format_filters();
+        case '13':
+          $block['subject'] = "Filter By Group";
+          $block['content'] = group_name_filters();
           break;
-        case 4:
-          $blocks['subject'] = "Sort By";
-          $blocks['content'] = sorting_options();
+        case '14':
+          $block['subject'] = "Sort By";
+          $block['content'] = sorting_options();
           break;
-        case 5:
-          $blocks['subject'] = "Current Search";
-          $blocks['content'] = current_search_filters();
+        case '15':
+          $block['subject'] = "Current Search";
+          $block['content'] = current_search_filters();
           break;
-          /* case 6:
-           $blocks['subject'] = "Search Form";
+          
+        /* 
+        case 6:
+          $blocks['subject'] = "Search Form";
           $blocks['content'] = web_catalogs_search_search_form();
-          break; */
-
+          break; 
+        case 7:
+          $blocks['subject'] = "Filter By State/Ministry/Department";
+          $blocks['content'] = state_agency_filters();
+          break;
+        */
       }
-      return $blocks;
+      return $block;
   }
-   
 }
-
-
 
 function web_catalogs_search_views_pre_execute(&$view)
 {
@@ -476,12 +467,9 @@ function web_catalogs_search_views_pre_execute(&$view)
         $replaced_sql .= 'LEFT JOIN content_type_policy_program_open_government ppog on node.nid = ppog.nid ';
       }
 
-      if( isset($filters['file']) ) {
+      if( isset($filters['file']) || isset($filters['accessFile']) ) {
       	$replaced_sql .= 'LEFT JOIN content_type_downloadable as downloadable ON downloadable.vid = node_data_field_request_type.field_dsat_downloadable_item_id
           LEFT JOIN files F on downloadable.field_dam_datafile_fid=F.fid ';
-      }
-      
-      if( isset($filters['accessFile']) ) {
       	$replaced_sql .= 'LEFT JOIN content_type_embed_link_access_method embed_link_access_method ON embed_link_access_method.nid = node.nid 
           LEFT JOIN term_data term_data ON term_data.tid = embed_link_access_method.field_elam_file_format_value ';
       }
@@ -513,8 +501,6 @@ function web_catalogs_search_views_pre_execute(&$view)
       if($view->current_display=='page_1')
         $view->set_items_per_page($itemCount);
     }
-
-
   }
 
 }
@@ -531,19 +517,20 @@ function web_catalogs_search_set_query_sort()
 
     $type=$sorting[0];
     $direction=$sorting[1];
-    if($type=='title')
-      $sort_query.="node_title ".$direction.",";
-    if($type=='popularity')
-      $sort_query.=" node_counter_totalcount ".$direction.",";
-    if($type=='updated')
-      $sort_query.=" node_changed ".$direction.",";
-    if($type=='type')
-      $sort_query.=" content_type_dataset.field_ds_catlog_type_type ".$direction.",";
-    if($type=='recent')
-      $sort_query.=" node_created ".$direction.",";
-     
-
-
+    
+    if(in_array($direction, array('desc','DESC','asc','ASC'))) {
+      if($type=='title')
+        $sort_query.="node_title ".$direction.",";
+      if($type=='popularity' || $type=='rating')
+        $sort_query.=" node_counter_totalcount ".$direction.",";
+      if($type=='updated')
+        $sort_query.=" node_changed ".$direction.",";
+      if($type=='type')
+        $sort_query.=" content_type_dataset.field_ds_catlog_type_type ".$direction.",";
+      if($type=='recent')
+        $sort_query.=" node_created ".$direction.",";
+    }
+  
   }
   return $sort_query;
 }
@@ -569,16 +556,12 @@ function web_catalogs_search_set_query_filters()
         $filter_query.="(ministry_department.field_ds_ministry_department_value = '".$value."') AND ";
       else if($type=='sub_agency')
         $filter_query.="(node_data_field_request_type.field_ds_sub_agency_nid = '".$value."') AND ";
-      else if($type=='file')
-        $filter_query.="(F.filemime = '".$value."') AND";
-      else if($type=='accessFile')
-      	$filter_query.="(term_data.name = '".$value."') AND";
+      else if($type=='file' || $type=='accessFile')
+        $filter_query.="(IF(node_data_field_request_type.field_dsat_access_method_value = 'Downloadable', F.filemime , term_data.name ) = '".$value."') AND";
       else if($type=='highvalue')
         $filter_query.="(ppog.field_ppog_high_value_dataset_value='Yes') AND ";
       else if($type=='group_name')
         $filter_query.="(raw.field_ctrd_dataset_group_name_value = '".$value."') AND ";
-
-      /*drupal_set_message($type.' '.$value.': '.$filter_query,'hi');*/
       $i++;
     }
   }
@@ -622,6 +605,7 @@ function web_catalogs_search_search_form()
 
 function current_search_filters()
 {
+  global $web_catalog_count;
 
   if($_GET['keys'])
   {
@@ -647,12 +631,14 @@ function current_search_filters()
         $output.='<li><a title="'.get_filter_value($filter_val).'"  href="'.remove_filter($filter_type).'">(-) </a>'.get_filter_value($filter_val).'</li>';
       }
     }
-
   }
+  
   if($output!='')
     $output='<ul>'.$output.'</ul>';
-
-  $output='<div class="item-list"><h3>Search found '.count(views_get_view_result('Catalogs_Search')).' items</h3>'.$output.'</div>';
+  
+  //$output='<div class="item-list"><h3>Search found ' . count(views_get_view_result('Catalogs_Search')).' items</h3>'.$output.'</div>';
+  $output='<div class="item-list"><h3>Search found ' . $web_catalog_count . ' items</h3>'.$output.'</div>';
+   
   return $output;
 
 }
@@ -680,27 +666,45 @@ function get_current_filters() {
   }
 }
 
-function sorting_options()
-{
+function sorting_options() {
   global $base_url;
-  $result=views_get_view_result('Catalogs_Search');
-  if($result)
-  {
-
-    $current_sort=$_GET['sort'];
-    $sorting=explode(' ',$current_sort);
-    $sort_type=$sorting[0];
-    $direction=$sorting[1];
-     
-    if($sort_type==''){
-      $sort_type='recent';  $direction='desc';
+  $current_sort = $_GET['sort'];
+  $keys         = $_GET['keys'];
+  $sorting      = explode(' ',$current_sort);
+  $sort_type    = $sorting[0];
+  $direction    = $sorting[1];
+  
+  $web_catalog_nids = web_catalog_extend_query_result(FALSE, 'nids');
+  
+  if(is_array($web_catalog_nids)) {
+    $wcs_id = implode(',', $web_catalog_nids);
+  }
+  
+  if(($keys != '' && $wcs_id !='') || $keys == '') {
+    if($sort_type=='') {
+      $sort_type='updated';  $direction='desc';
     }
-
-    $options=array('title'=>'Title', 'popularity'=>'Popularity', 'rating'=>'Rating', 'updated'=>'Last Updated', 'recent'=>'Most Recent');
-    $default_direction=array('title'=>'asc', 'popularity'=>'desc', 'rating'=>'desc', 'updated'=>'desc', 'recent'=>'asc');
+    
+    $options  = array(
+      'title'       => 'Title', 
+      'popularity'  => 'Popularity', 
+      'rating'      => 'Rating', 
+      'updated'     => 'Last Updated', 
+      'recent'      => 'Most Recent', 
+      'download'    => 'Most Downloaded'
+    );
+    
+    $default_direction = array(
+      'title'       =>'asc', 
+      'popularity'  =>'desc', 
+      'rating'      =>'desc', 
+      'updated'     =>'desc', 
+      'recent'=>'desc', 
+      'download'=>'desc'
+    );
+    
     $output='<div class="item-list"><ul>';
-    foreach($options as $type=>$sort)
-    {
+    foreach($options as $type=>$sort) {
       $image='';
       if($sort_type==$type)
       {
@@ -713,43 +717,34 @@ function sorting_options()
         $output.='<li>'.$image.'<a title="'.$sort.'" class="active" href="'.set_sort($type,$default_direction[$type]).'">'.$sort.'</a></li>';
       else
         $output.='<li><a title="'.$sort.'" href="'.set_sort($type,$default_direction[$type]).'">'.$sort.'</a></li>';
-
     }
     $output.='</ul></div>';
+    
+    return $output;
   }
-  return $output;
 }
 
-
-function agency_name_filters()
-{
+function agency_name_filters() {
   /* Max Depth of the agency in term_hierarchy*/
-  $maxDepth = 3; $nid = ''; $result = views_get_view_result('Catalogs_Search');
-  if ($result) {
-    foreach ($result as $res) {
-      $nid.=$res->nid.',';
-    }
-    $nid = substr($nid,0,strlen($nid)-1);
-    if($nid != '') $nid_query='node_data_field_ds_description.nid IN ('.$nid.') AND';
+  $maxDepth     = 3;
+  $wherequery   = '';
+  $stagency     = get_filter('stagency');
+  $keys         = $_GET['keys'];
+  
+  $web_catalog_nids = web_catalog_extend_query_result(FALSE, 'nids');
+  
+  if(is_array($web_catalog_nids)) {
+    $wcs_id = implode(',', $web_catalog_nids);
+  }
+  
+  if($stagency == '' && (($keys != '' && $wcs_id !='') || $keys == '') ) {
     
-    /*
-    $filters = get_current_filters();
-
-    if ( !empty($filters['catalog_type']) ) {
-      $catalog_type = "(node_data_field_ds_description.field_ds_catlog_type_type ='$filters[catalog_type]') AND ";
-    }
     
-    if (!empty($filters['file']) ) {
-      $file_type = "( IF(node_data_field_ds_description.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name ) = '$filters[file]' ) AND ";
+    if($wcs_id!='') {
+      $wherequery .= "AND node.nid IN (".$wcs_id.") ";
     }
-    
-    if(!empty($filters['agency'])) {
-      $agency = "( node_data_field_ds_ministry_department.field_ds_ministry_department_value = '$filters[agency]' ) AND ";
-    }
-    */
     
     $agency_sql = "SELECT distinct(node_data_field_ds_ministry_department.field_ds_ministry_department_value) as term_id,
-        IF(node_data_field_ds_description.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name )  AS file_type,
         count(node_data_field_ds_ministry_department.field_ds_ministry_department_value) as count,
         node_data_field_ds_description.nid nid, term_data.name name,
         node_data_field_ds_ministry_department.delta delta, th.parent 
@@ -764,33 +759,122 @@ function agency_name_filters()
         LEFT JOIN files F on F.fid = downloadable.field_dam_datafile_fid  
         LEFT JOIN content_type_embed_link_access_method as access_method ON node_data_field_ds_description.field_dsat_access_point_item_id = access_method.vid 
         LEFT JOIN term_data TD on TD.tid = access_method.field_elam_file_format_value 
-        WHERE $nid_query 
-        (node.status = 1) 
+        WHERE node.status = 1 
         AND (workflow_node.sid = 10) 
         AND node_data_field_ds_description.field_request_type_value != 'Delete' 
+        $wherequery
         GROUP BY node_data_field_ds_ministry_department.field_ds_ministry_department_value
         ORDER BY th.parent, node_data_field_ds_ministry_department.vid ASC, count DESC";
+      $agency = db_query($agency_sql);
+  
+      $old_filters='';  $prev = null;  $delta_count = 0;  $output = ''; $data = array();
+      while ($row=db_fetch_array($agency)) {
+        if($row[term_id]) {
+          $data[$row[term_id]] = $row;
+        }
+      }
+      
+      for($i = 0; $i < $maxDepth; $i++){
+        agency_name_arrange_child($data, 'parent');
+      }
+      
+      agency_name_remove_child($data, 'moved');
+      
+      function sortByOrder($a, $b) {
+        return strcasecmp($a['name'], $b['name']);
+      }
+      
+      usort($data, 'sortByOrder');
+      
+      arrayToUL($data, $output);
+      
+      if (count($data)) {
+        $output = '<div class="item-list tree">' . $output . '</div>';
+      } else {
+        $output = '';
+      }
+    return $output;
+  }
+}
 
+function state_agency_filters() {
+  /* Max Depth of the agency in term_hierarchy*/
+  $maxDepth     = 3;
+  $wherequery   = '';
+  $agency       = get_filter('agency');
+  $keys         = $_GET['keys'];
+  
+  $web_catalog_nids = web_catalog_extend_query_result(FALSE, 'nids');
+  
+  if(is_array($web_catalog_nids)) {
+    $wcs_id = implode(',', $web_catalog_nids);
+  }
+  
+  if($agency == '' && (($keys != '' && $wcs_id !='') || $keys == '')) {
+    if($wcs_id!='') {
+      $wherequery .= "AND node.nid IN (".$wcs_id.") ";
+    }
+    
+    $agency_sql = "SELECT DISTINCT(node_data_field_ds_ministry_department.field_ds_st_ministry_department_value) AS term_id, 
+          IF(node_data_field_ds_description.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name )  AS file_type,
+          COUNT(node_data_field_ds_ministry_department.field_ds_st_ministry_department_value) AS COUNT, 
+          node_data_field_ds_description.nid nid, term_data.name NAME, 
+          node_data_field_ds_ministry_department.delta delta, th.parent 
+          FROM node node 
+          LEFT JOIN workflow_node workflow_node ON node.nid = workflow_node.nid 
+          LEFT JOIN node_counter node_counter ON node.nid = node_counter.nid 
+          LEFT JOIN content_type_dataset node_data_field_ds_description ON node.nid = node_data_field_ds_description.nid 
+          LEFT JOIN content_field_ds_st_ministry_department node_data_field_ds_ministry_department ON node.vid = node_data_field_ds_ministry_department.vid 
+          LEFT JOIN term_data term_data ON term_data.tid = node_data_field_ds_ministry_department.field_ds_st_ministry_department_value 
+          LEFT JOIN term_hierarchy th ON th.tid = node_data_field_ds_ministry_department.field_ds_st_ministry_department_value 
+          LEFT JOIN content_type_downloadable as downloadable ON node_data_field_ds_description.field_dsat_downloadable_item_id = downloadable.vid 
+          LEFT JOIN files F on F.fid = downloadable.field_dam_datafile_fid  
+          LEFT JOIN content_type_embed_link_access_method as access_method ON node_data_field_ds_description.field_dsat_access_point_item_id = access_method.vid 
+          LEFT JOIN term_data TD on TD.tid = access_method.field_elam_file_format_value
+          WHERE (node.status = 1) 
+          AND (workflow_node.sid = 10) 
+          AND node_data_field_ds_description.field_request_type_value != 'Delete' 
+          $wherequery 
+          GROUP BY node_data_field_ds_ministry_department.field_ds_st_ministry_department_value 
+          ORDER BY th.parent, node_data_field_ds_ministry_department.vid ASC, COUNT DESC";
+    
     $agency = db_query($agency_sql);
-
-    $old_filters='';  $prev = null;  $delta_count = 0;  $output = ''; $data = array();
-
+    $output = '';
+    $old_filters='';  
+    $prev = null;  
+    $delta_count = 0;  
+    $output = ''; 
+    $data = array();
+  
     while ($row=db_fetch_array($agency)) {
-      $data[$row[term_id]] = $row;
+      if($row[term_id]) {
+        $data[$row[term_id]] = $row;
+      }
     }
     
     for($i = 0; $i < $maxDepth; $i++){
       agency_name_arrange_child($data, 'parent');
     }
     
-    agency_name_remove_child($data, 'parent');
-    arrayToUL($data, $output);
-
-    if ($output) {
-      $output = '<div class="item-list tree">'.$output.'</div>';
+    agency_name_remove_child($data, 'moved');
+    
+    
+    function sortByOrder_1($a, $b) {
+      return strcasecmp($a['name'], $b['name']);
     }
+    
+    usort($data, 'sortByOrder_1');
+    
+    arrayToStateList($data, $output);
+    
+    if (count($data)) {
+      $output = '<div class="item-list tree">' . $output . '</div>';
+    } else {
+      $output = '';
+    }
+    
+    return $output;
   }
-  return $output;
 }
 
 function agency_name_arrange_child(array &$data, $parent_key) {
@@ -798,6 +882,7 @@ function agency_name_arrange_child(array &$data, $parent_key) {
     if($term[$parent_key]){
       if(array_key_exists( $term[$parent_key], $data)){
         $data[$term[$parent_key]][child][$term_id] = $term;
+        $data[$term_id][moved] = true;
       }
     }
   }
@@ -843,6 +928,36 @@ function arrayToUL(array $array, &$output = null)
   $output .= '</ul>';
 }
 
+function arrayToStateList(array $array, &$output = null)
+{
+  $output .= '<ul>';
+  foreach ($array as $key => $value)
+  {
+    if (isset($value['NAME'])) {
+
+
+      if (!empty($value['child']) && is_array($value['child']))
+      {
+        $output .= '<li class="parent">';
+        $output .= '<span class="tree-toggle">&nbsp;</span>';
+      } 
+      else {
+        $output .= '<li class="leaf">';
+        $output .= '<span class="leaf-toggle">&nbsp;</span>';
+      }
+
+      $output .= '<a href="' . set_filters('stagency',$value['term_id']) . '"> ' . $value['NAME'] . ' (' . $value['COUNT'] . ')</a>';
+
+      if (!empty($value['child']) && is_array($value['child']))
+      {
+        $output .= arrayToStateList($value['child'], $output);
+      }
+
+      $output .= "</li>";
+    }
+  }
+  $output .= '</ul>';
+}
 
 
 function sub_agency_name_filters()
@@ -896,40 +1011,23 @@ function sub_agency_name_filters()
     $output.='</ul></div>';
 
   }
-
+  
   return $output;
 }
 
 function file_format_filters() {
-  $nid = '';
-  $result = views_get_view_result('Catalogs_Search');
-  if ($result) {
-    foreach ($result as $res) {
-      $nid.=$res->nid.',';
+  $wherequery       = '';
+  $keys             = $_GET['keys'];
+  $web_catalog_nids = web_catalog_extend_query_result(FALSE, 'nids');
+  
+  if(is_array($web_catalog_nids)) {
+    $wcs_id = implode(',', $web_catalog_nids);
+  }
+  
+  if(($keys != '' && $wcs_id !='') || $keys == '') {
+    if($wcs_id!='') {
+      $wherequery .= "AND n.nid IN (".$wcs_id.") ";
     }
-    
-    $nid=substr($nid,0,strlen($nid)-1);
-    
-    if($nid!='') $nid_query='ds.nid IN ('.$nid.') AND';
-    
-    $filters = get_current_filters();
-    
-    /*
-    if (!empty($filters['catalog_type'])) {
-      $catalog_type = "(ds.field_ds_catlog_type_type ='$filters[catalog_type]') AND ";
-    }
-    if (!empty($filters['agency'])) {
-      $agency = "( node_data_field_ds_ministry_department.field_ds_ministry_department_value = '$filters[agency]' ) AND ";
-      $agency_where = "";
-    } 
-    else {
-      $agency_where = "AND node_data_field_ds_ministry_department.delta = 0 ";
-    }
-    
-    if (!empty($filters['file']) ) {
-      $file_type = "( IF(node_data_field_ds_description.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name ) = '$filters[file]' ) AND ";
-    }
-    */
     
     $file_query = "SELECT IF(ds.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name )  AS name, 
     ds.field_dsat_access_method_value type, count(*) count 
@@ -940,10 +1038,11 @@ function file_format_filters() {
     LEFT JOIN files F on F.fid = downloadable.field_dam_datafile_fid 
     LEFT JOIN  content_type_embed_link_access_method as access_method ON ds.field_dsat_access_point_item_id = access_method.vid 
     LEFT JOIN  term_data TD on TD.tid = access_method.field_elam_file_format_value 
-    WHERE  $nid_query 
-    n.status=1 
+    $joinquery 
+    WHERE n.status=1 
     AND wf.sid=10 
     AND ds.field_request_type_value != 'Delete' 
+    $wherequery 
     GROUP BY IF(ds.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name )";
     
     $files=db_query($file_query);
@@ -951,21 +1050,17 @@ function file_format_filters() {
     while($row=db_fetch_object($files))
     {
       $fileformat=$row->name;
-      
       $text=get_filter_value($fileformat);
-      if ($row->type == 'Downloadable') {
-      	$output.='<li><a title="'.$text.'" href="'.set_filters('file',$row->name).'">'.$text.' ('.$row->count.')</a></li>';
-      } 
-      else {
-      	$output.='<li><a title="'.$text.'" href="'.set_filters('accessFile',$row->name).'">'.$text.' ('.$row->count.')</a></li>';
-      }
+      
+      $output.='<li><a title="'.$text.'" href="'.set_filters('file',$row->name).'">'.$text.' ('.$row->count.')</a></li>';
+      
     }
       
     if ($output) {
         $output='<div class="item-list"><ul>'.$output.'</ul></div>';
     }
+    return $output;
   }
-  return $output;
 }
 
 
@@ -973,6 +1068,7 @@ function catalog_type_filters()
 {
   $nid='';
   $result=views_get_view_result('Catalogs_Search');
+  $keys        = $_GET['keys'];
   if($result)
   {
     foreach($result as $res)
@@ -987,14 +1083,21 @@ function catalog_type_filters()
     if(!empty($filters['catalog_type'])){
       $catalog_type = "(ds.field_ds_catlog_type_type ='$filters[catalog_type]') AND ";
     }
-
+    
+    if($keys != '') {
+      $wherequery .= "AND (n.title LIKE '%$keys%' OR ds.field_ds_description_value LIKE '%$keys%' OR ds.field_keywords_value LIKE '%$keys%' ) ";
+    }
+    
     $catalogs=db_query("SELECT distinct(ds.field_ds_catlog_type_type) as name,
         count(ds.field_ds_catlog_type_type) as count
         FROM content_type_dataset ds
         LEFT JOIN node n on ds.nid=n.nid
-        LEFT JOIN workflow_node wf on ds.nid=wf.nid
+        LEFT JOIN workflow_node wf on ds.nid=wf.nid 
+        LEFT JOIN term_node TN ON TN.nid = n.nid
+        LEFT JOIN term_data TND ON TND.tid = TN.tid
         WHERE n.status=1 AND wf.sid=10
-        AND ds.field_ds_catlog_type_type IS NOT NULL
+        AND ds.field_ds_catlog_type_type IS NOT NULL 
+        $wherequery 
         GROUP BY ds.field_ds_catlog_type_type order by count desc");
 
     while($row=db_fetch_object($catalogs))
@@ -1074,10 +1177,9 @@ function group_name_filters() {
 
 function web_catalogs_search_form_alter(&$form, &$form_state, $form_id) {
   global $base_url;
-  if ($form['#id'] == 'views-exposed-form-Catalogs-Search-page-1')
-  {
+  if ($form['#id'] == 'views-exposed-form-Catalogs-Search-page-1') {
      
-    if($_GET['retain_filters']==1 && $_GET['retained_filters']){
+    if ($_GET['retain_filters']==1 && $_GET['retained_filters']) {
       $url=$_SERVER['REQUEST_URI'];
 
       // $url=str_replace('filter=','filter='.$_GET['retained_filters'],$url);
@@ -1085,19 +1187,21 @@ function web_catalogs_search_form_alter(&$form, &$form_state, $form_id) {
       $query=substr($url,strpos($url,'?')+1);
 
       // drupal_set_message($query,'');
-
+      
       drupal_goto('catalogs',$query);
     }
 
     $catalog_url = '';
-    if($catalog_type = get_filter('catalog_type')) {
-      $catalog_url = '?filter=catalog_type%3A'.$catalog_type;
+    if ($catalog_type = get_filter('catalog_type')) {
+      $catalog_url = '?filter=catalog_type%3A'.$catalog_type.'&sort=updated desc';
     }
-
+    
     $form['reset'] = array(
-        '#type' => 'markup',
-        '#value' => '<input class="form-button" alt="Reset" title="Reset" type="reset" value="Reset" onClick="javascript:window.location=\'/' .
-        $form_state['view']->display['page_1']->display_options['path']  .'/'.$catalog_url.'\';" />',
+    	'#type'       => 'image_button',
+    	'#src'        => path_to_theme() . '/images/reset-button.png',
+      '#value'      => t('Reset'),
+      '#attributes' => array('alt'=>"Reset", 'title'=>"Reset",
+          'onclick' => 'window.location=\'/' . $form_state['view']->display['page_1']->display_options['path']  .'/'.$catalog_url . '\'; return false;')
     );
 
     $form['retain_filters']=array(
@@ -1105,10 +1209,7 @@ function web_catalogs_search_form_alter(&$form, &$form_state, $form_id) {
         '#type'=>'checkbox',
         '#title'=>'Retain current filters',
         '#value'=>$_GET['filter'],
-        '#prefix'=>'</div><div class="retain-filters">',
-         
-         
-         
+        '#prefix'=>'</div><div class="retain-filters">'
     );
     $value=$_GET['filter'];
 
@@ -1121,16 +1222,13 @@ function web_catalogs_search_form_alter(&$form, &$form_state, $form_id) {
     $form['keys']['#size'] = '60';
 
     $form['#validate'][] = 'web_catalogs_search_form_validate';
+    
     $form['#submit'][]='web_catalogs_search_retain_filters_submit';
 
     $form['submit']['#value']='Search';
     $form['submit']['#type']='image_button';
     $form['submit']['#src'] = path_to_theme() . '/images/button.png';
     $form['submit']['#attributes']=array('alt'=>"Search" ,'title'=>"Search" );
-
-     
-
-    //var_dump($form['#info']);
   }
 }
 
@@ -1231,4 +1329,50 @@ function web_catalogs_search_ext_to_mime($extion) {
   return false;
 }
 
-?>
+function web_catalogs_search_preprocess(&$vars) {
+  if($_GET['q'] == 'catalogs') {
+    $vars['search_title'] = 'Browse ';
+    
+    $cat_type = get_filter('catalog_type');
+    
+    switch($cat_type) {
+      case 'catalog_type_raw_data':
+        drupal_set_title("Datasets");
+        $vars['search_title'] .= 'Datasets';
+        $vars['catalog_type'] = 'Datasets';
+        $vars['_catalog_type'] = 'catalog_type_raw_data';
+        break;
+      case 'catalog_type_data_apps':
+        drupal_set_title("Apps");
+        $vars['search_title'] .= 'Apps';
+        $vars['catalog_type'] = 'Apps';
+        $vars['_catalog_type'] = 'catalog_type_data_apps';
+        break;
+      default:
+        drupal_set_title("Catalogs");
+        $vars['search_title'] .= 'Catalogs';
+        $vars['catalog_type'] = 'Catalogs';
+        $vars['_catalog_type'] = '';
+    }
+    
+    $breadcrumb = array();
+    $breadcrumb[] = l('Home', '<front>');
+    $breadcrumb[] = drupal_set_title();
+    drupal_set_breadcrumb($breadcrumb);
+    
+  }
+}
+
+function web_catalogs_get_latest_update_date_by_tid($tid, $format = "d-m-Y") {
+  $sql = "SELECT MAX(N.changed) AS max_changed
+          FROM term_node T
+          INNER JOIN node AS N ON N.nid = T.nid 
+          INNER JOIN workflow_node AS W ON W.nid = N.nid 
+          WHERE N.status = 1 AND W.sid = 10 AND T.tid = " . $tid;
+  
+  if($date = db_result(db_query($sql))) {
+    return date($format, $date);
+  }
+  
+  return false;
+}

@@ -1,0 +1,13 @@
+Index: sites/all/modules/contrib/textsize/includes/textsize.block.inc
+===================================================================
+--- sites/all/modules/contrib/textsize/includes/textsize.block.inc	(revision 7109)
++++ sites/all/modules/contrib/textsize/includes/textsize.block.inc	(working copy)
+@@ -232,7 +232,7 @@
+     'cache_block',
+   );
+   foreach ($tables as $table) {
+-    cache_clear_all('*', $table, TRUE);
++    // cache_clear_all('*', $table, TRUE);
+   }
+ }
+ 

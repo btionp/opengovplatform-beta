@@ -1,0 +1,684 @@
+<?php 
+/**
+ * 
+ * Implementation of hook_menu().
+ */
+
+global $web_catalog_count, $web_catalog_nids, $web_catalog_result, $web_catalog_av, $web_catalog_ar;
+
+function web_catalog_extend_menu() {
+  $items['catalogs'] = array(
+      'title'             => 'Catalog',
+      'page callback'     => 'web_catalog_extend_page',
+      'access callback'   => TRUE,
+      'access arguments'  => TRUE,
+      'type'              => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function catalog_search_form(&$form_state) {
+  $form = array();
+  $catalog_type = get_filter('catalog_type');
+  
+  switch($catalog_type) {
+    case 'catalog_type_raw_data':
+      $catalog_type_text = 'Datasets';
+      break;
+    case 'catalog_type_data_apps':
+      $catalog_type_text = 'Apps';
+      break;
+  }
+  
+  $form['search_term'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Search for ' . $catalog_type_text ),
+      '#default_value' => ($_GET['keys']?$_GET['keys']:'Search terms'),
+      '#size'          => 60,
+      '#maxlength'     => 255
+  );
+  
+  $form['action']['submit'] = array(
+      '#type'     => 'image_button', 
+      '#value'    => t('Search'),
+      '#src'      => 'sites/all/themes/ogpl_css2/images/button.png',
+      '#submit'   => array('catalog_search_form_submit_handler')
+  );
+  
+  $form['action']['reset'] = array(
+      '#type'       => 'image_button',
+      '#value'      => t('Reset'),
+      '#src'        => 'sites/all/themes/ogpl_css2/images/reset-button.png',
+      '#attributes' => array('onclick' => 'window.location = "/catalogs?filter=catalog_type%3A' . $catalog_type . '&sort=updated desc"; return false;')
+  );
+  
+  $form['action']['#prefix'] = '<div class="submit-button">';
+  $form['action']['#suffix'] = '</div>';
+  
+  return $form;
+}
+
+function catalog_search_form_submit_handler($form, &$form_state) {
+  $keys         = $form_state['values']['search_term'];
+  $catalog_type = get_filter('catalog_type');
+  $file_type    = get_filter('file');
+  $agency       = get_filter('agency');
+  $stagency     = get_filter('stagency');
+  $group_name   = get_filter('group_name');
+  $sort         = $_GET['sort'];
+  
+  $param        = array();
+  $filter       = '';
+  
+  if($keys != '' && $keys != 'Search terms') {
+    $param['keys'] = $keys;
+  }
+  
+  if($catalog_type != '') {
+    $filter .= "catalog_type:$catalog_type";
+  }
+  
+  if($file_type != '') {
+    $filter .= "+file:$file_type";
+  }
+  
+  if($agency != '') {
+    $filter .= "+agency:$agency";
+  }
+  
+  if($stagency != '') {
+    $filter .= "+stagency:$stagency";
+  }
+  
+  if($group_name != '') {
+    $filter .= "+group_name:$group_name";
+  }
+  
+  if($filter != '') {
+    $param['filter'] = $filter;
+  }
+  
+  if($sort != '') {
+    $param['sort'] = $sort;
+  }
+  
+  
+  $form_state['redirect'] = array(
+      'catalogs', // uri
+      $param, //query param
+  );
+}
+
+function catalog_search_form_reset_handler($form, &$form_state) {
+  $param = array();
+  
+  if($catalog_type = get_filter('catalog_type')) {
+    $param['filter'] = 'catalog_type:' . $catalog_type;
+  }
+  
+  $param['sort'] = 'updated desc';
+  
+  $form_state['redirect'] = array(
+      'catalogs', // uri
+      $param,     //query param
+  );
+}
+
+function web_catalog_extend_av($force = FALSE) {
+  global $web_catalog_av;
+  if(empty($web_catalog_av) || $force) {
+    $query_av = "SELECT SUM(TVC.cnt)/COUNT(TVC.cnt)  av FROM
+        (SELECT COUNT(V.content_id) cnt FROM `votingapi_vote` V
+        WHERE VALUE != 0 AND
+        (V.`tag` = 'votequality'
+        OR V.`tag` = 'voteaccessibility'
+        OR V.`tag` = 'voteusability')
+        GROUP BY V.`content_id`) TVC";
+    $result_av = db_query($query_av);
+
+    if($row_av = db_fetch_array($result_av)) {
+      $av = $row_av['av'];
+    }
+
+    $web_catalog_av = $av;
+  }
+  
+  return $av;
+}
+
+function web_catalog_extend_ar($force = FALSE) {
+  global $web_catalog_ar;
+  if(empty($web_catalog_ar) || $force) {
+    $query_ar = "SELECT SUM(V1.value)/COUNT(V1.content_id) ar FROM `votingapi_vote` V1
+      WHERE VALUE != 0  AND
+      (V1.`tag` = 'votequality'  OR V1.`tag` = 'voteaccessibility' OR V1.`tag` = 'voteusability')";
+
+    $result_ar = db_query($query_ar);
+
+    if($row_ar = db_fetch_array($result_ar)) {
+      $ar = $row_ar['ar'];
+    }
+
+    $web_catalog_ar = $ar;
+  }
+
+  return $ar;
+}
+
+
+function web_catalog_extend_query_param() {
+  $join         = '';
+  $where        = '';
+  $order_by     = '';
+  $limit        = '';
+  $item_count   = 10;
+  $keys         = $_GET['keys'];
+  $catalog_type = get_filter('catalog_type');
+  $agency       = get_filter('agency');
+  $stagency     = get_filter('stagency');
+  $group_name   = get_filter('group_name');
+  $file_type    = get_filter('file');
+  $sort         = $_GET['sort'];
+  $page         = $_GET['page'];
+  
+  if($keys != '') {
+    $keys = strtoupper($keys);
+    $where .= "AND (UPPER(N.title) LIKE '%$keys%' OR UPPER(D.field_ds_description_value) LIKE '%$keys%' OR UPPER(D.field_keywords_value) LIKE '%$keys%') ";
+  }
+  
+  switch($catalog_type) {
+    case 'catalog_type_raw_data':
+      $where .= "AND D.field_ds_catlog_type_type = 'catalog_type_raw_data' ";
+      break;
+    case 'catalog_type_data_apps':
+      $where .= "AND D.field_ds_catlog_type_type = 'catalog_type_data_apps' ";
+      break;
+  }
+  
+  if(taxonomy_get_term($agency)) {
+    $join .= "LEFT JOIN content_field_ds_ministry_department MD ON MD.nid = N.nid ";
+    $where .= "AND MD.`field_ds_ministry_department_value`=" .$agency ." ";
+  }
+  
+  if(taxonomy_get_term($stagency)) {
+    $join .= "LEFT JOIN content_field_ds_st_ministry_department MD ON MD.nid = N.nid ";
+    $where .= "AND MD.`field_ds_st_ministry_department_value`=" .$stagency ." ";
+  }
+  
+  if($group_name = check_plain($group_name)) {
+    $join .= "LEFT JOIN content_type_catalog_type_raw_data raw ON raw.nid = N.nid ";
+    $where .= "AND raw.field_ctrd_dataset_group_name_value = '" .$group_name ."' ";
+  }
+  
+  if($file_type = check_plain($file_type)) {
+    $join .= "
+      LEFT JOIN content_type_downloadable as downloadable ON downloadable.vid = D.field_dsat_downloadable_item_id  
+      LEFT JOIN files F on F.fid = downloadable.field_dam_datafile_fid  
+      LEFT JOIN content_type_embed_link_access_method as access_method ON access_method.vid  = D.field_dsat_access_point_item_id  
+      LEFT JOIN term_data TD on TD.tid = access_method.field_elam_file_format_value ";
+    $where .= "AND IF(D.field_dsat_access_method_value = 'Downloadable', F.filemime , TD.name ) = '" . $file_type ."' ";
+  }
+  
+  if($sort != '' && $sort = check_plain($sort)) {
+    $sort_value   = explode(' ',$sort);
+    $sort_by      = $sort_value[0];
+    $sort_order   = $sort_value[1];
+  
+    switch($sort_by) {
+      case 'title':
+        $sort_by = 'N.title';
+        break;
+      case 'popularity':
+        $sort_by = 'view';
+        break;
+      case 'rating':
+        $sort_by = 'BR';
+        break;
+      case 'updated':
+        $sort_by = 'N.changed';
+        break;
+      case 'recent':
+        $sort_by = 'N.created';
+        break;
+      case 'download':
+        $sort_by = 'DC.download_count';
+        break;
+    }
+  
+    if($sort_order != '') {
+      $sort_order = strtoupper($sort_order);
+    } else {
+      $sort_order = 'ASC';
+    }
+  
+    $order_by = "ORDER BY $sort_by $sort_order";
+  
+  } else {
+    $order_by = "ORDER BY N.changed DESC";
+  }
+  
+  if($_GET['results']!='') {
+    $item_count = $_GET['results'];
+  }
+  
+  if($item_count < 10) {
+    $item_count = 10;
+  } else if($item_count >= 50) {
+    $item_count = 50;
+  }
+  
+  if($page != '') {
+    $limit = "LIMIT $page, $item_count";
+  } else {
+    $limit = "LIMIT 0, $item_count";
+    $page = 0;
+  }
+  
+  $data = array(
+    'join'       => $join,
+    'where'      => $where,
+    'order_by'   => $order_by,
+    'limit'      => $limit,
+    'item_count' => $item_count
+  );
+  
+  return $data;
+}
+
+function web_catalog_extend_query_result($force = FALSE, $option = 'result') {
+  global $web_catalog_result, $web_catalog_count, $web_catalog_nids;
+  
+  $param_query  = web_catalog_extend_query_param();
+  $join         = $param_query['join'];
+  $where        = $param_query['where'];
+  $order_by     = $param_query['order_by'];
+  $limit        = $param_query['limit'];
+  $item_count   = $param_query['item_count'];
+  $av           = web_catalog_extend_av();
+  $ar           = web_catalog_extend_ar();
+  
+  if(empty($web_catalog_count) || $force) {
+    $count_query = "SELECT COUNT(N.nid) AS count_query FROM node N
+    LEFT JOIN `workflow_node` W ON W.nid = N.nid
+    LEFT JOIN `content_type_dataset` D ON D.nid = N.nid
+    " . $join . "
+    WHERE N.type = 'dataset'
+      AND N.status = 1
+    AND W.sid = 10
+    " . $where;
+  
+    $web_catalog_count = db_result(db_query($count_query));
+  }
+  
+  if(empty($web_catalog_result) || $force) {
+    
+    $query = "SELECT N.nid, N.title, D.field_ds_description_value, NC.totalcount view, 
+    DC.download_count, VC1.value V, AVG(VC3.value) R,
+    (
+    ($av * $ar)
+    +
+    (VC1.value * AVG(VC3.value))
+    )
+    /
+    (
+    ($av + VC1.value)
+    ) BR
+    FROM node N
+    LEFT JOIN `content_type_dataset` D ON D.nid = N.nid
+    LEFT JOIN workflow_node W ON W.nid = N.nid
+    LEFT JOIN node_counter NC ON NC.nid = N.nid
+    LEFT JOIN (SELECT VC.content_id, VC.value FROM votingapi_cache VC WHERE VC.function = 'count') VC1 ON VC1.content_id = N.nid
+    LEFT JOIN (SELECT VC2.content_id, VC2.value FROM votingapi_cache VC2 WHERE VC2.function = 'average') VC3 ON VC3.content_id = N.nid
+    LEFT JOIN web_download_count DC ON DC.nid = N.nid
+    " . $join . "
+    WHERE N.type = 'dataset'
+    AND N.status = 1
+    AND W.sid = 10
+    " . $where . "
+    GROUP BY N.nid
+      " . $order_by;
+   
+    if($_GET['debug']) {
+      print $query;
+    }
+    
+    $web_catalog_result = pager_query($query, $item_count, 0, $count_query);
+  }
+  
+  if(empty($web_catalog_nid) || $force) {
+    $nid_query = "SELECT N.nid FROM node N
+    LEFT JOIN `workflow_node` W ON W.nid = N.nid
+    LEFT JOIN `content_type_dataset` D ON D.nid = N.nid
+    " . $join . "
+    WHERE N.type = 'dataset'
+      AND N.status = 1
+    AND W.sid = 10
+    " . $where;
+    
+    $web_catalog_nids = array();
+    $web_catalog_nid_result = db_query($nid_query );
+    while ($wcs_row = db_fetch_array($web_catalog_nid_result)) {
+      $web_catalog_nids[] = $wcs_row['nid'];
+    }
+  }
+  
+  switch($option) {
+    case 'nids':
+      return $web_catalog_nids;
+    case 'count':
+      return $web_catalog_count;
+    case 'resutl':
+    default:
+      return $web_catalog_result;
+  }
+  
+} 
+
+/*
+ * Item Per Page Form
+*/
+function catalog_search_IPP_form() {
+  $form = array();
+  $form['results'] = array(
+      '#type' => 'select',
+      '#title' => t('Results Per Page'),
+      '#default_value' => $_GET['results']?$_GET['results']:10,
+      '#attributes' => array('onchange' => 'this.form.submit()'),
+      '#options' => array(
+          '10' => t('10'),
+          '25' => t('25'),
+          '50' => t('50'),
+      ),
+  );
+  
+  $form['action']['ipp_submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('ok'),
+      '#submit' => array('catalog_search_IPP_form_submit_handler')
+  );
+  
+  return $form;
+}
+
+function catalog_search_IPP_form_submit_handler($form, &$form_state) {
+  $keys         = $_GET['keys'];
+  $catalog_type = get_filter('catalog_type');
+  $file_type    = get_filter('file');
+  $agency       = get_filter('agency');
+  $stagency     = get_filter('stagency');
+  $group_name   = get_filter('group_name');
+  $sort         = $_GET['sort'];
+  $page         = 0;
+  $results      = $form_state['values']['results'];
+  $param        = array();
+  $filter       = '';
+  
+  if($catalog_type != '') {
+    $filter .= "catalog_type:$catalog_type";
+  }
+  
+  if($file_type != '') {
+    $filter .= "+file:$file_type";
+  }
+  
+  if($agency != '') {
+    $filter .= "+agency:$agency";
+  }
+  
+  if($stagency != '') {
+    $filter .= "+stagency:$stagency";
+  }
+  
+  if($group_name != '') {
+    $filter .= "+group_name:$group_name";
+  }
+  
+  if($keys != '') {
+    $param['keys'] = $keys;
+  }
+  
+  if($filter != '') {
+    $param['filter'] = $filter;
+  }
+  
+  if($sort != '') {
+    $param['sort'] = $sort;
+  }
+  
+  if($page != '') {
+    $param['page'] = $page;
+  }
+  
+  if($results != '') {
+    $param['results'] = $results;
+  }
+  
+  $form_state['redirect'] = array(
+      'catalogs', // uri
+      $param, //query param
+  );
+  
+  print '';
+}
+
+function web_catalog_extend_page() {
+  $result = web_catalog_extend_query_result(TRUE);
+  $page         = $_GET['page']?$_GET['page']:0;
+  $item_count   = $_GET['results']?$_GET['results']:10;
+  
+  $catalog_type = get_filter('catalog_type');
+  
+  switch($catalog_type) {
+    case 'catalog_type_data_apps':
+      $catalog_type_text = 'Apps';
+      break;
+    case 'catalog_type_raw_data':
+    default:
+      $catalog_type_text = 'Datasets';
+      break;
+  }
+  
+  // Table header
+  $header = array(
+      'slno'   => "<h3 class='sl-no'>" . t('Sr. No.') . "</h3>",
+      'title'  => "<h3 class='name-title'>" .t('Name/Title') . "</h3>",
+      'view'   => "<h3 class='popularity'>" .t('Popularity') . "</h3>",
+      'rating' => "<h3 class='rating'>" .t('Rating') . "</h3>",
+      'format' => "<h3 class='format'>" .t('Format') . "</h3>"
+  );
+  
+  $i = ($page * $item_count) + 1;
+  
+  // Table rows
+  $rows = array();
+  
+  while ($row = db_fetch_array($result)) {
+    $rows[] = array(
+        'slno'  => '<span>' . $i++ . '</span>',
+        'title'  => "<p>" . l(WCE_print_char_limit($row['title'], 100),drupal_get_path_alias('node/'.$row['nid'])) . 
+                    "<br/>" . WCE_print_char_limit($row['field_ds_description_value'], 300) . "</p>",
+        'view'   => '<span class="download-stat">' . $row['view'] .' Views</span><br/><br/>' . 
+                    get_web_download_count_text($row['download_count']),
+        'rating' => theme_fivestar_static($row['BR']) ,
+        'format' => web_catalog_get_file_format($row['nid'],$row['title'])
+    );
+  }
+  
+  $output .= drupal_get_form('catalog_search_form') . '
+      <script type="text/javascript">
+        jQuery(function(){
+          jQuery("#catalog-search-form #edit-search-term").focus(function(){
+            var valu = jQuery(this).val();
+            if(valu == "Search terms" || valu == "Search Terms") {
+              jQuery(this).val("");
+            }
+          });
+      
+          jQuery("#catalog-search-form #edit-search-term").blur(function(){
+            var valu = jQuery(this).val();
+            if(valu == "") {
+              jQuery(this).val("Search terms");
+            }
+          });
+          ' . ($catalog_type == "catalog_type_raw_data"? 'jQuery(".menu-10204 a").addClass("active");' : 
+              ($catalog_type == "catalog_type_data_apps"? 'jQuery(".menu-10178 a").addClass("active");': '')) . ' 
+        });
+      </script>';
+  
+  if(count($rows)) {
+    $output .= '<div class="fRight" id="big-catalog-panel">
+      <div class="heading"> Browse ' . $catalog_type_text . ' <div class="sort-select-box switch-js-enabled " style="">
+        <div id="selectpage-wrapper" class="form-item">
+          <style>
+            #catalog-search-IPP-form input[type="submit"] {
+              display: none;
+            }
+          </style>
+          ' . drupal_get_form('catalog_search_IPP_form') . ' 
+        </div>
+      </div>
+      <div class="sort-select-box cBoth switch-js-disabled" style="display: none;"> 
+        Results Per Page:  10 |
+        <a href="/catalogs/?filter=catalog_type%3Acatalog_type_raw_data&amp;sort=updated%20desc&amp;pageop=1&amp;results=25" title="Show 25 results per page"> 25 </a>|
+        <a href="/catalogs/?filter=catalog_type%3Acatalog_type_raw_data&amp;sort=updated%20desc&amp;pageop=1&amp;results=50" title="Show 50 results per page"> 50 </a>|
+        <a href="/catalogs/?filter=catalog_type%3Acatalog_type_raw_data&amp;sort=updated%20desc&amp;pageop=1&amp;results=100" title="Show 100 results per page"> 100 </a>
+      </div>
+    </div>';
+    
+    $output .= '<div class="tableData">';
+    $output .= theme('table', $header, $rows);
+    $output .= '</div>';
+    $output .= theme('pager', NULL, $item_count, 0);
+    $output .= '<div style="text-align:center;margin-right:20px;">
+      <div class="suggest-label">
+        <div class="midTxt">
+          <div class="midTxt-content">
+            ' . l('Could not find required ' . $catalog_type_text . '? Suggest to the Department', 'suggest_dataset', array('query' => array('filter' => 'catalog_type%3A'  .$catalog_type))) . '
+          </div>
+        </div>
+      </div>
+    </div>';
+    $output .= '</div>';
+  } else {
+    $output .= '<div class="tableData">';
+    $output .= '<ul>
+    <li>Check if your spelling is correct, or try removing filters.</li> ';
+    /*
+    <!-- 
+    <li>Remove quotes around phrases to match each word individually: <em>"blue drop"</em> will match less than <em>blue drop</em>.</li>
+    <li>You can require or exclude terms using + and -: <em>big +blue drop</em> will require a match on <em>blue</em> while <em>big blue -drop</em> will exclude results that contain <em>drop</em>.</li>
+    -->
+    */
+    $output .= '</ul>';
+    $output .= '</div>';
+  }
+  
+  // Format and print out table.
+  return $output;
+}
+
+function web_catalog_get_file_format($nid, $title){
+  global $base_url;
+  $view_catalogs_img = '';
+  
+  $file_cnt_query = "SELECT count(*) cnt
+    FROM content_type_dataset ds LEFT JOIN node n on ds.nid=n.nid
+    LEFT JOIN workflow_node wf on ds.nid=wf.nid
+    LEFT JOIN  content_type_downloadable as downloadable ON downloadable.vid = ds.field_dsat_downloadable_item_id
+    LEFT JOIN files F on downloadable.field_dam_datafile_fid=F.fid
+    WHERE ds.nid = ".$nid." AND  n.status=1 AND wf.sid=10 AND F.filemime IS NOT NULL
+    GROUP BY F.filemime";
+  
+  $row_count = db_result(db_query($file_cnt_query ));
+  
+  if($row_count) {
+    $file_query = "SELECT F.filemime, F.filepath
+      FROM content_type_dataset ds LEFT JOIN node n on ds.nid=n.nid
+      LEFT JOIN workflow_node wf on ds.nid=wf.nid
+      LEFT JOIN  content_type_downloadable as downloadable ON downloadable.vid = ds.field_dsat_downloadable_item_id
+      LEFT JOIN files F on downloadable.field_dam_datafile_fid=F.fid
+      WHERE ds.nid = ".$nid." AND  n.status=1 AND wf.sid=10 AND F.filemime IS NOT NULL
+      GROUP BY F.filemime";
+  
+    $file_det=db_fetch_object(db_query($file_query));
+  
+    if (function_exists('dms_customizations_get_file_icon')) {
+      $fileicon = dms_customizations_get_file_icon($file_det->filemime, false);
+      
+      $filenamearray = explode( '.', $fileicon);
+      $filename = strtoupper($filenamearray[0]);
+  
+      if ($fileicon) {
+        if(variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PRIVATE){
+          $path = urlencode(str_replace(file_directory_path(), 'system/files', $file_det->filepath));
+        } else {
+          $path =  base_path() . $file_det->filepath;
+        }
+  
+        $_target = ($file_det->filemime == 'text/csv'? ' target="_blank" ':'');
+  
+        $view_catalogs_img = '<a title="Download '.$filename.' for '.$title.'" href="'.$base_url.'/access-point-download-count?url=' .
+            $base_url . $path .
+            '&nid=' . $nid . '" ' . $_target . '><img alt="' .
+            $file_det->filemime  .
+            '" src="' . $base_url.'/'.drupal_get_path('theme', 'ogpl_css2').'/images/' . $fileicon . '"/></a>';
+      }
+    }
+  } else {
+    $file_cnt_query = "SELECT ds.field_dsat_access_point_value
+      FROM content_type_dataset ds
+      LEFT JOIN node n on ds.nid=n.nid
+      LEFT JOIN workflow_node wf on ds.nid=wf.nid
+      WHERE ds.nid = ".$nid." AND  n.status=1";
+    $result = db_result(db_query($file_cnt_query ));
+    $result = unserialize($result);
+    if (function_exists('dms_customizations_get_file_icon')) {
+      $fileicon = dms_customizations_get_file_icon($result[field_elam_file_format][0][value]);
+      if ($fileicon) {
+  
+        $filenamearray = explode( '.', $fileicon);
+        $filename = strtoupper($filenamearray[0]);
+         
+        $view_catalogs_img = '<a href="'.$base_url.'/access-point-download-count?url=' .
+            $result[field_elam_access_point][0][url].
+            '&nid=' . $nid . '" target="_blank" title="Download '.$filename.' for '.$title.'(External Link that opens in a new window)"><img  src="' .$base_url.'/'.drupal_get_path('theme', 'ogpl_css2').'/images/' . $fileicon . '"/></a>';
+      }
+    }
+  }
+  
+  if(function_exists('opendataviz_get_visualization_link')) {
+    $visualize = opendataviz_get_visualization_link($nid);
+  }
+  
+  $file_output = '';
+  
+  return $view_catalogs_img . "<br/>" . $visualize  . "<br/>" . $file_output;
+}
+
+function WCE_print_char_limit($string, $limit = 200) {
+  $string = strip_tags($string);
+
+  if (strlen($string) > $limit) {
+
+    // truncate string
+    $stringCut = substr($string, 0, $limit);
+
+    // make sure it ends in a word so assassinate doesn't become ass...
+    $string = substr($stringCut, 0, strrpos($stringCut, ' ')).' ...';
+  }
+  return $string;
+}
+
+function WCE_print_word_limit($string, $num_words = 50) {
+  $words = array();
+  $words = explode(" ", $string, $num_words);
+  $shown_string = "";
+  
+  if(count($words) == ($num_words+1)) {
+    $words[100] = " ... ";
+  }
+  
+  $shown_string = implode(" ", $words);
+  
+  return $shown_string;
+}
