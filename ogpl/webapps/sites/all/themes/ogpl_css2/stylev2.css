@@ -478,6 +478,9 @@ h2.community-header-icon {
     margin: 30px 80px 0 0px;
     
 }
+#homev2 .panels-flexible-region-inside.panels-flexible-region-53-bottom_region-inside {
+	padding: 0 !important;
+  }
 /**
  * This hack targets the Webkit browser engine
  * which includes Safari and Chrome.

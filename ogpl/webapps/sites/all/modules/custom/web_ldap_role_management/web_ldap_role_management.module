@@ -250,6 +250,68 @@ function web_ldap_role_management_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
           $message  = drupal_mail('web_ldap_role_management', 'contributor_notice', $email, $language->language, $params);
         }
       }
+      if($node->type == 'data_controllers') {
+        //the user name of the new user
+        $user_name = $node->field_dc_email[0]['email'];
+        
+        if(db_result(db_query("SELECT COUNT(*) FROM {users} WHERE LOWER(mail) = LOWER('%s')", $user_name)) == 0 ) {
+          $user_type = $node->field_dc_create_acc['0']['value'];
+          if ($user_type == '1') {
+            $ministry = $node->field_dc_ministry_dept;
+            //the user name of the new user
+            $user_name = $node->field_dc_email[0]['email'];
+            //set up the user fields using a random 8 character password
+            $fields = array(
+                'name' => $user_name,
+                'mail' => $user_name,
+                'pass' => user_password(8),
+                'status' => 1,
+            );
+            // profile data
+            $uname = $node->field_dc_name[0]['value'];
+            $name = explode(' ', $uname);
+            $first_name = $name[0];
+            if(isset($name[1])) {
+              $last_name = $name[1];
+            }
+            else {
+              $last_name = ' ';
+            }
+            $user_profile = array(
+                'profile_first_name'=> $first_name,
+                'profile_last_name'=> $last_name,
+                'profile_designation'=> $node->field_dc_designation[0]['value'],
+                'profile_address_office'=> $node->field_dc_address[0]['value'],
+                'profile_mobile'=> $node->field_dc_phone[0]['value'],
+                'profile_phone_office'=> $node->field_dc_phone[0]['value']
+            );
+            $profile_data = array(
+                'field_rr_first_name'=> $first_name,
+                'field_rr_last_name'=> $last_name,
+                'field_rr_designation'=> $node->field_dc_designation[0]['value'],
+                'field_rr_address_office'=> $node->field_dc_address[0]['value'],
+                'field_rr_phone_office'=> $node->field_cc_mobile[0]['value'],
+                'field_rr_mobile'=> $node->field_dc_phone[0]['value'],
+                'field_ds_ministry_department' => $ministry
+            );
+            //you can give a user roles if necessary based on the role name
+            $role_name = _get_user_role_name_by_role_id(4);
+            if(empty($role_name)) $role_name = 'Validator/Approver (Data Controller)';
+            $fields['roles'] = array('4' => $role_name);
+            //the first parameter is left blank so a new user is created
+            $account = user_save('', $fields);
+             
+            // Manually set the password so it appears in the e-mail.
+            $account->password = $fields['pass'];
+            if ($account != NULL ) {
+              // Send the e-mail through the user module.
+              drupal_mail('user', 'register_admin_created', $email, NULL, array('account' => $account), variable_get('site_mail', 'nic-ndsap@nic.in'));
+              _user_save_profile($user_profile, $account, 'Personal Information');
+              _create_role_request($account, $profile_data, $node->uid);
+            }
+          }
+        }
+      }
       break;
   }
 }
@@ -313,8 +375,8 @@ function _contributor_check($form, &$form_state) {
   else if ($user_type == '1' && $email_in_domain[1] != variable_get('email_domain', 'nic.in')) {
     $status = array(error => TRUE, message => t('The e-mail address '. $email_in .' is not in valid domain.'));
   }
-  else if (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE LOWER(mail) = LOWER('%s')", $email_in)) > 0) {
-    $account = user_load(array('mail' => $email_in));
+  else if ($account = user_load(array('mail' => $email_in))) {
+    
     $user_id = $account->uid;
     $user_object = content_profile_load('role_request', $user_id);
     /*if (function_exists('_get_user_roles')){
