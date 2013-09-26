@@ -7177,3 +7177,71 @@ ul.quicktabs_tabs.quicktabs-style-arrows a {
 #block-views-suggested_datasets-block_1 .view-suggested-datasets .view-header h2 a {
     font-weight: bold;
 }
+
+/* catalog page style */
+
+#catalog-search-form  {
+    background: url("/sites/all/themes/ogpl_css2/images/srch-box.png") repeat-x scroll 0 0 #C7CCBE;
+    border-bottom: 1px solid #B5AD97;
+    color: #000000;
+    font-size: 1.3em;
+    height: 100%;
+    padding: 8px 10px 5px;
+}
+
+#catalog-search-form label {
+    font-size: 1.4em;
+    padding-bottom: 10px;
+}
+
+#catalog-search-form  .form-item .form-text {
+    background: url("/sites/all/themes/ogpl_css2/images/srch-bar.png") repeat-x scroll 0 0 #EEF0EC;
+    border: 1px solid #999D91;
+    color: #000000;
+    float: left;
+    font-size: 1.3em;
+    height: 30px;
+    line-height: 30px;
+    margin: 0 4px 0 0;
+    padding: 0 9px;
+    width: 450px;
+}
+
+#catalog-search-form  #edit-submit {
+    border: 1px solid #303030;
+    height: 30px;
+    margin-top: 0;
+    padding: 0;
+    width: 32px;
+}
+
+#catalog-search-form  #edit-reset {
+    border: medium none;
+    margin-top: 0;
+    padding: 0;
+    width: 32px;
+}
+
+#catalog-search-form #edit-search-term-wrapper , #catalog-search-form #submit-button{
+display: inline;
+}
+#big-catalog-panel .tableData table td {
+  vertical-align: top;
+}
+
+#big-catalog-panel .tableData thead tr {
+font-size: 1.28em;
+}
+
+#big-catalog-panel .tableData .sl-no {
+width: 50px;
+}
+
+#catalog-search-IPP-form #edit-results {
+width: 3.2em;
+}
+
+#big-catalog-panel .download-stat {
+background: none;
+border: none;
+}
