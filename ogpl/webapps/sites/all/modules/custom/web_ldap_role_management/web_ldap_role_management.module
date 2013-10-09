@@ -305,7 +305,7 @@ function web_ldap_role_management_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL){
             $account->password = $fields['pass'];
             if ($account != NULL ) {
               // Send the e-mail through the user module.
-              drupal_mail('user', 'register_admin_created', $user_name, NULL, array('account' => $account), variable_get('site_mail', 'nic-ndsap@nic.in'));
+              drupal_mail('user', 'register_admin_created', $user_name, NULL, array('account' => $account), variable_get('site_mail', 'sitename@localhost.com'));
               _user_save_profile($user_profile, $account, 'Personal Information');
               _create_role_request($account, $profile_data, $node->uid);
             }
