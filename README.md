@@ -16,4 +16,4 @@ Release notes
 - Data Visualization Tool
 
 
-Data Portal India (http://data.gov.in) is powered by OGPL-Beta Codebase
+Data Portal India is powered by OGPL-Beta Codebase
